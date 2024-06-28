@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".EditPlantActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/screenTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/edit_plant_title"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_gravity="center"
+            android:paddingBottom="16dp" />
+
+        <EditText
+            android:id="@+id/familyEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="488dp"
+            android:minHeight="48dp"
+            android:hint="@string/family_hint"
+            android:autofillHints="family_name"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/speciesEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="488dp"
+            android:minHeight="48dp"
+            android:hint="@string/species_hint"
+            android:autofillHints="species_name"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/subspeciesEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="488dp"
+            android:minHeight="48dp"
+            android:hint="@string/subspecies_hint"
+            android:autofillHints="subspecies_name"
+            android:inputType="text" />
+
+        <EditText
+            android:id="@+id/stockQtyEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="488dp"
+            android:minHeight="48dp"
+            android:hint="@string/stock_qty_hint"
+            android:autofillHints="stock_quantity"
+            android:inputType="number" />
+
+        <EditText
+            android:id="@+id/stockPriceEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="488dp"
+            android:minHeight="48dp"
+            android:hint="@string/stock_price_hint"
+            android:autofillHints="stock_price"
+            android:inputType="numberDecimal" />
+
+        <EditText
+            android:id="@+id/plantDescriptionEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="488dp"
+            android:minHeight="48dp"
+            android:hint="@string/plant_description_hint"
+            android:autofillHints="plant_description"
+            android:inputType="text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <Button
+                android:id="@+id/backButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/back" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <Button
+                android:id="@+id/saveButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/save" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
