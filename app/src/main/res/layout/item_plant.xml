@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp">
+
+    <ImageView
+        android:id="@+id/plant_image"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:contentDescription="@string/plant_image"
+        android:scaleType="centerCrop"
+        android:layout_margin="8dp"
+        android:background="@drawable/circle_shape"
+        android:padding="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:src="@tools:sample/avatars" />
+
+    <TextView
+        android:id="@+id/plant_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/plant_image"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Plant Name" />
+
+    <TextView
+        android:id="@+id/plant_stock"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/plant_image"
+        app:layout_constraintTop_toBottomOf="@id/plant_name"
+        tools:text="Stock: 0" />
+
+    <TextView
+        android:id="@+id/plant_stock_id"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/plant_image"
+        app:layout_constraintTop_toBottomOf="@id/plant_stock"
+        tools:text="Stock ID: 10001" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
