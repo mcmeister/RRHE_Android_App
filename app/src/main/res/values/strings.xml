@@ -14,4 +14,14 @@
     <string name="plant_details">Plant Details</string>
     <string name="back">Back</string>
     <string name="edit">Edit</string>
+
+    <!-- New strings for Edit Plant screen -->
+    <string name="edit_plant_title">Edit Plant</string>
+    <string name="family_hint">Family</string>
+    <string name="species_hint">Species</string>
+    <string name="subspecies_hint">Subspecies</string>
+    <string name="stock_qty_hint">Stock Quantity</string>
+    <string name="stock_price_hint">Stock Price</string>
+    <string name="plant_description_hint">Plant Description</string>
+    <string name="save">Save</string>
 </resources>

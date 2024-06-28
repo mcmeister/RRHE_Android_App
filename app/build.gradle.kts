@@ -53,21 +53,21 @@ android {
 }
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.4.1")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.3")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.github.bumptech.glide:glide:4.12.0")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
 
-    // Add these for Material Components
-    implementation("com.google.android.material:material:1.6.1")
+    // Material Components
+    implementation("com.google.android.material:material:1.9.0")
 
-    // Add these for Glide to work properly
+    // Glide compiler for annotation processing
     kapt("com.github.bumptech.glide:compiler:4.12.0")
 
-    // Add Jetpack Compose and Material3 dependencies
+    // Jetpack Compose and Material3 dependencies
     implementation("androidx.compose.ui:ui:1.5.0")
     implementation("androidx.compose.material3:material3:1.1.0-alpha03")
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.0")
@@ -75,9 +75,17 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.5.0")
 
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
-    implementation ("androidx.viewpager2:viewpager2:1.0.0")
+    // OkHttp Logging Interceptor
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.3")
 
-    // Add JUnit dependency for unit tests
+    // ViewPager2
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+
+    // JUnit dependencies for unit testing
     testImplementation("junit:junit:4.13.2")
+
+    // AndroidX Test dependencies for instrumented tests
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.test:runner:1.5.2")
 }

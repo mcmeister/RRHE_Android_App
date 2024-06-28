@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.rrhe">
 
     <!-- Network permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -14,10 +15,9 @@
         android:theme="@style/Theme.RRHE"
         android:networkSecurityConfig="@xml/network_security_config">
 
-        <!-- Plant Details Activity -->
+        <activity android:name=".EditPlantActivity" />
         <activity android:name=".PlantDetailsActivity" />
 
-        <!-- Stock Activity -->
         <activity
             android:name=".StockActivity"
             android:exported="true">
@@ -27,5 +27,4 @@
             </intent-filter>
         </activity>
     </application>
-
 </manifest>

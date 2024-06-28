@@ -1,5 +1,6 @@
 package com.example.rrhe
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
@@ -18,6 +19,23 @@ class PlantDetailsActivity : AppCompatActivity() {
         val stockID = intent.getIntExtra("StockID", 0)
         val stockQty = intent.getIntExtra("StockQty", 0)
         val photoLink1 = intent.getStringExtra("PhotoLink1") ?: ""
+        val family = intent.getStringExtra("Family") ?: ""
+        val species = intent.getStringExtra("Species") ?: ""
+        val subspecies = intent.getStringExtra("Subspecies") ?: ""
+        val stockPrice = intent.getDoubleExtra("StockPrice", 0.0)
+        val plantDescription = intent.getStringExtra("PlantDescription") ?: ""
+
+        val plant = Plant(
+            StockID = stockID,
+            NameConcat = nameConcat,
+            Family = family,
+            Species = species,
+            Subspecies = subspecies,
+            StockQty = stockQty,
+            StockPrice = stockPrice,
+            PlantDescription = plantDescription,
+            PhotoLink1 = photoLink1
+        )
 
         binding.plantName.text = nameConcat
         binding.plantStockId.text = getString(R.string.stock_id_text, stockID)
@@ -33,7 +51,10 @@ class PlantDetailsActivity : AppCompatActivity() {
         }
 
         binding.editButton.setOnClickListener {
-            // Implement edit functionality later
+            val intent = Intent(this, EditPlantActivity::class.java).apply {
+                putExtra("plant", plant)
+            }
+            startActivity(intent)
         }
     }
 }
