@@ -1,4 +1,5 @@
 🌿 RRHE Android App
+
 RRHE is an Android application designed to manage and display information about plants. It utilizes Jetpack Compose for modern UI development, Retrofit for networking, and Glide for image loading.
 
 
