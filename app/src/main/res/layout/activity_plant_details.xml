@@ -21,12 +21,13 @@
     <ImageView
         android:id="@+id/plantImage"
         android:layout_width="0dp"
-        android:layout_height="200dp"
+        android:layout_height="400dp"
         android:scaleType="centerCrop"
         app:layout_constraintTop_toBottomOf="@id/screenTitle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintWidth_percent="1.0" />
+        app:layout_constraintWidth_percent="1.0"
+        android:contentDescription="@string/plant_image_description" />
 
     <TextView
         android:id="@+id/plantName"
@@ -65,14 +66,26 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/plantStockId" />
 
+    <TextView
+        android:id="@+id/plantStockPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_marginStart="16dp"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/plantStockQty" />
+
     <Button
         android:id="@+id/backButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:text="@string/back"
-        app:layout_constraintTop_toBottomOf="@id/plantStockQty"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/plantStockPrice" />
 
     <Button
         android:id="@+id/editButton"
@@ -80,7 +93,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:text="@string/edit"
-        app:layout_constraintTop_toBottomOf="@id/plantStockQty"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/plantStockPrice" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

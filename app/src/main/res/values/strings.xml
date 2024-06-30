@@ -3,15 +3,20 @@
     <string name="plant_image">Plant Image</string>
     <string name="plant_name">Plant Name</string>
     <string name="plant_stock">Plant Stock</string>
+    <string name="stock">Stock</string>
     <string name="stock_text">Stock: %1$d</string>
     <string name="stock_id_text">Stock ID: %1$d</string>
+    <string name="stock_price_text">Stock Price: %1$.2f</string>
+    <string name="plant_image_description">Image of the plant</string>
     <string name="image_popup_description">Full screen image</string>
     <string name="error_image_description">Error image</string>
     <string name="search_hint" tools:ignore="TypographyEllipsis">Search...</string>
     <string name="qr_code_button_description">Scan QR code</string>
     <string name="clear_search_button_description">Clear search</string>
+    <string name="autofillHintSearch">search</string>
     <string name="search_icon_description">Search</string>
     <string name="plant_details">Plant Details</string>
+    <string name="add">Add</string>
     <string name="back">Back</string>
     <string name="edit">Edit</string>
 
@@ -24,4 +29,25 @@
     <string name="stock_price_hint">Stock Price</string>
     <string name="plant_description_hint">Plant Description</string>
     <string name="save">Save</string>
+
+    <!-- New strings for Stats screen -->
+    <string name="stats">Stats</string>
+    <string name="total_rows">Total Rows: %1$d</string>
+    <string name="total_plants">Total Plants: %1$d</string>
+    <string name="total_non_m">Total Non-Mother Plants: %1$d</string>
+    <string name="total_m">Total Mother Plants: %1$d</string>
+    <string name="non_m_value">Non-Mother Plants Value: %1$.2f</string>
+    <string name="m_value">Mother Plants Value: %1$.2f</string>
+    <string name="total_value">Total Value: %1$.2f</string>
+    <string name="web_plants">Web Plants: %1$d</string>
+    <string name="web_qty">Web Quantity: %1$d</string>
+    <string name="web_value">Web Value: %1$.2f</string>
+    <string name="usd">USD: %1$.2f</string>
+    <string name="eur">EUR: %1$.2f</string>
+
+    <!-- Missing strings -->
+    <string name="search_icon">Search</string>
+    <string name="clear_search">Clear</string>
+    <string name="qr_code_button">Scan QR Code</string>
+    <string name="add_plant">Add Plant</string>
 </resources>

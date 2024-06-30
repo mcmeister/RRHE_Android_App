@@ -12,4 +12,18 @@ data class PlantUpdateRequest(
     val StockQty: Int,
     val StockPrice: Double,
     val PlantDescription: String
-) : Parcelable
+) : Parcelable {
+    companion object {
+        fun fromPlant(plant: Plant): PlantUpdateRequest {
+            return PlantUpdateRequest(
+                StockID = plant.StockID,
+                Family = plant.Family ?: "Unknown",
+                Species = plant.Species ?: "Unknown",
+                Subspecies = plant.Subspecies ?: "",
+                StockQty = plant.StockQty,
+                StockPrice = plant.StockPrice,
+                PlantDescription = plant.PlantDescription ?: "No description"
+            )
+        }
+    }
+}
