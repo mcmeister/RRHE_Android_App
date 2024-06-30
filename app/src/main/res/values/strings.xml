@@ -5,6 +5,7 @@
     <string name="plant_stock">Plant Stock</string>
     <string name="stock_text">Stock: %1$d</string>
     <string name="stock_id_text">Stock ID: %1$d</string>
+    <string name="plant_image_description">Image of the plant</string>
     <string name="image_popup_description">Full screen image</string>
     <string name="error_image_description">Error image</string>
     <string name="search_hint" tools:ignore="TypographyEllipsis">Search...</string>
