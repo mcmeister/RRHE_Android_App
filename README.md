@@ -87,4 +87,4 @@ RRHE is an Android application designed to manage and display information about 
 
 # 📄 License
 
-- **This project is licensed under the MIT License - see the LICENSE file for details.**
+This project is licensed under the MIT License - see the LICENSE file for details.
