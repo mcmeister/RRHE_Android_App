@@ -1,18 +1,23 @@
 package com.example.rrhe
 
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
+import android.view.MotionEvent
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.BottomNavigation
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Icon
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,8 +27,18 @@ import com.example.rrhe.ui.theme.RRHETheme
 
 class MainActivity : AppCompatActivity() {
 
+    private val stockViewModel: StockViewModel by viewModels()
+    private lateinit var inactivityDetector: InactivityDetector
+    private lateinit var screenLockReceiver: Utils.ScreenLockReceiver
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize InactivityDetector
+        inactivityDetector = InactivityDetector(this)
+        screenLockReceiver = Utils.ScreenLockReceiver(inactivityDetector)
+        registerReceiver(screenLockReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+
         setContent {
             RRHETheme {
                 val navController = rememberNavController()
@@ -32,10 +47,43 @@ class MainActivity : AppCompatActivity() {
                         BottomNavigationBar(navController = navController)
                     }
                 ) {
-                    NavGraph(navController = navController, modifier = Modifier.padding(it))
+                    NavGraph(navController = navController, inactivityDetector = inactivityDetector, modifier = Modifier.padding(it))
                 }
             }
         }
+
+        // Initialize and check database connection
+        stockViewModel.checkDatabaseConnectionOnLaunch()
+
+        // Enable OnBackInvokedCallback for API level 33 and higher
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    // Handle the back press
+                    finish()
+                }
+            })
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        inactivityDetector.reset() // Reset inactivity timer when resuming
+    }
+
+    override fun onPause() {
+        super.onPause()
+        inactivityDetector.stop() // Stop inactivity timer when pausing
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        inactivityDetector.reset() // Reset inactivity timer on user interaction
+        return super.onTouchEvent(event)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(screenLockReceiver)
     }
 }
 
@@ -45,17 +93,16 @@ fun BottomNavigationBar(navController: NavController) {
         Screen.StockScreen,
         Screen.StatsScreen
     )
-    BottomNavigation(
-        backgroundColor = Color.White,
+    NavigationBar(
+        containerColor = Color.White,
         contentColor = Color.Black
     ) {
         items.forEach { screen ->
-            BottomNavigationItem(
+            NavigationBarItem(
                 icon = {
-                    when(screen.route) {
-                        Screen.StockScreen.route -> Icon(Icons.Default.List, contentDescription = screen.route)
+                    when (screen.route) {
+                        Screen.StockScreen.route -> Icon(Icons.AutoMirrored.Filled.List, contentDescription = screen.route)
                         Screen.StatsScreen.route -> Icon(Icons.Default.BarChart, contentDescription = screen.route)
-                        else -> Icon(Icons.Default.Add, contentDescription = screen.route)
                     }
                 },
                 label = { Text(screen.route) },

@@ -1,0 +1,10 @@
+# Set default behavior, in case users don't have core.autocrlf set.
+* text=auto
+
+# Force LF endings for all relevant text files.
+*.java text eol=lf
+*.kt text eol=lf
+*.xml text eol=lf
+*.kts text eol=lf
+*.sh text eol=lf
+*.txt text eol=lf 

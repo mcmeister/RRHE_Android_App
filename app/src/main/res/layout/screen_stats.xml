@@ -25,6 +25,7 @@
                 android:text="@string/stats"
                 android:textSize="24sp"
                 android:textStyle="bold"
+                android:textColor="@android:color/black"
                 android:layout_gravity="center"
                 android:paddingBottom="16dp" />
 
@@ -32,87 +33,126 @@
                 android:id="@+id/totalRowsTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/total_rows"
-                android:textSize="18sp" />
-
-            <!-- Add similar TextViews for all other stats fields with the same IDs as used in the Composable function -->
+                android:textSize="18sp"/>
 
             <TextView
                 android:id="@+id/totalPlantsTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/total_plants"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/totalNonMTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/total_non_m"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/totalMTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/total_m"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/nonMValueTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/non_m_value"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/mValueTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/m_value"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/totalValueTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/total_value"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/webPlantsTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/web_plants"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/webQtyTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/web_qty"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/webValueTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/web_value"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/ratesTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:text="@string/rates_text"
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/usdTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/usd"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
 
             <TextView
                 android:id="@+id/eurTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
                 android:text="@string/eur"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
+
+            <TextView
+                android:id="@+id/stampTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/black"
+                android:text="@string/stats_stamp"
+                android:textSize="18sp"
+                android:layout_marginTop="8dp"/>
         </LinearLayout>
     </ScrollView>
 

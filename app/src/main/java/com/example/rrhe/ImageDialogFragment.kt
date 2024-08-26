@@ -8,11 +8,10 @@ import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
-import com.bumptech.glide.request.transition.Transition
-import com.bumptech.glide.request.RequestListener
-import com.bumptech.glide.load.engine.GlideException
 import com.example.rrhe.databinding.ImagePopupBinding
 
 class ImageDialogFragment : DialogFragment() {
@@ -36,9 +35,12 @@ class ImageDialogFragment : DialogFragment() {
         val binding = ImagePopupBinding.inflate(inflater, container, false)
         val imageUrl = arguments?.getString(ARG_IMAGE_URL)
 
+        // Clear Glide cache before loading the image
+        Glide.with(binding.imageViewPopup.context).clear(binding.imageViewPopup)
+
         Glide.with(binding.imageViewPopup.context)
             .load(imageUrl)
-            .apply(RequestOptions().placeholder(R.drawable.loading_placeholder))
+            .apply(RequestOptions().override(300, 300).placeholder(R.drawable.loading_placeholder))
             .listener(object : RequestListener<Drawable> {
                 override fun onLoadFailed(
                     e: GlideException?,

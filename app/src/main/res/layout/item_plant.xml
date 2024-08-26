@@ -30,19 +30,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/plant_image"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="Plant Name" />
-
-    <TextView
-        android:id="@+id/plant_stock"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:textSize="14sp"
-        android:textColor="@android:color/black"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/plant_image"
-        app:layout_constraintTop_toBottomOf="@id/plant_name"
-        tools:text="Stock: 0" />
+        tools:text="@string/plant_name" />
 
     <TextView
         android:id="@+id/plant_stock_id"
@@ -53,7 +41,31 @@
         android:textColor="@android:color/black"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/plant_image"
+        app:layout_constraintTop_toBottomOf="@id/plant_name"
+        tools:text="@string/stock_id" />
+
+    <TextView
+        android:id="@+id/plant_stock"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/plant_image"
+        app:layout_constraintTop_toBottomOf="@id/plant_stock_id"
+        tools:text="@string/stock_qty" />
+
+    <TextView
+        android:id="@+id/plant_stock_price"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:textSize="14sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/plant_image"
         app:layout_constraintTop_toBottomOf="@id/plant_stock"
-        tools:text="Stock ID: 10001" />
+        tools:text="@string/stock_price" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

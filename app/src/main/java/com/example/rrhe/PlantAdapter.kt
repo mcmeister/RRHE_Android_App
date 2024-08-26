@@ -1,16 +1,16 @@
 package com.example.rrhe
 
-import android.util.Log
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.rrhe.databinding.ItemPlantBinding
 
-class PlantAdapter(private var plants: List<Plant>) : RecyclerView.Adapter<PlantAdapter.PlantViewHolder>() {
+class PlantAdapter(private var plants: List<Plant>, private val inactivityDetector: InactivityDetector) : RecyclerView.Adapter<PlantAdapter.PlantViewHolder>() {
 
     private var onItemClickListener: ((Plant) -> Unit)? = null
 
@@ -18,68 +18,41 @@ class PlantAdapter(private var plants: List<Plant>) : RecyclerView.Adapter<Plant
         onItemClickListener = listener
     }
 
-    fun updatePlants(newPlants: List<Plant>) {
-        val diffCallback = PlantDiffCallback(plants, newPlants)
-        val diffResult = DiffUtil.calculateDiff(diffCallback)
-        this.plants = newPlants
-        diffResult.dispatchUpdatesTo(this)
-        Log.d("PlantAdapter", "updatePlants called with ${newPlants.size} plants")
-    }
-
     inner class PlantViewHolder(private val binding: ItemPlantBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(plant: Plant) {
             binding.plantName.text = plant.NameConcat
-            binding.plantStock.text = binding.root.context.getString(R.string.stock_text, plant.StockQty)
-            binding.plantStockId.text = binding.root.context.getString(R.string.stock_id_text, plant.StockID)
+            binding.plantStock.text = binding.root.context.getString(R.string.stock_qty, plant.StockQty)
+            binding.plantStockId.text = binding.root.context.getString(R.string.stock_id, plant.StockID)
+            binding.plantStockPrice.text = binding.root.context.getString(R.string.stock_price, plant.StockPrice)
 
             val requestOptions = RequestOptions()
                 .circleCrop()
+                .placeholder(R.drawable.circle_shape) // Use a circular placeholder
+                .error(R.drawable.circle_shape) // Use the same circular placeholder for errors
 
-            val photoLink = plant.PhotoLink1
-            if (photoLink.isNullOrEmpty() || !photoLink.startsWith("http://") && !photoLink.startsWith("https://")) {
-                // Clear the image if the photo link is invalid
-                binding.plantImage.setImageDrawable(null)
-            } else {
-                // Load the actual image
-                Glide.with(binding.plantImage.context)
-                    .load(photoLink)
-                    .apply(requestOptions)
-                    .listener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
-                        override fun onLoadFailed(
-                            e: com.bumptech.glide.load.engine.GlideException?,
-                            model: Any?,
-                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            Log.e("Glide", "Image load failed", e)
-                            return false
-                        }
+            Glide.with(binding.plantImage.context)
+                .load(plant.Photo1)
+                .apply(requestOptions)
+                .into(binding.plantImage)
 
-                        override fun onResourceReady(
-                            resource: android.graphics.drawable.Drawable?,
-                            model: Any?,
-                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
-                            dataSource: com.bumptech.glide.load.DataSource?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            return false
-                        }
-                    })
-                    .into(binding.plantImage)
-            }
-
-            binding.plantImage.setOnClickListener {
-                val context = it.context
-                if (context is FragmentActivity) {
-                    val dialog = ImageDialogFragment.newInstance(if (photoLink.isNullOrEmpty() || !photoLink.startsWith("http://") && !photoLink.startsWith("https://")) null else photoLink)
-                    dialog.show(context.supportFragmentManager, "imageDialog")
-                } else {
-                    Log.e("PlantAdapter", "Context is not a FragmentActivity")
-                }
-            }
-
+            // Click listener for the root view to navigate to plant details
             binding.root.setOnClickListener {
-                onItemClickListener?.invoke(plant)
+                inactivityDetector.reset()  // Reset inactivity timer on plant item click
+                val context = it.context
+                val intent = Intent(context, PlantDetailsActivity::class.java).apply {
+                    putExtra("plant", plant)
+                }
+                context.startActivity(intent)
+            }
+
+            // Click listener for the plant image to open in fullscreen
+            binding.plantImage.setOnClickListener {
+                inactivityDetector.reset()  // Reset inactivity timer on image click
+                val fragment = ImageDialogFragment.newInstance(plant.Photo1)
+                (binding.root.context as AppCompatActivity).supportFragmentManager
+                    .beginTransaction()
+                    .add(fragment, "imageDialog")
+                    .commitAllowingStateLoss()
             }
         }
     }
@@ -95,18 +68,20 @@ class PlantAdapter(private var plants: List<Plant>) : RecyclerView.Adapter<Plant
 
     override fun getItemCount(): Int = plants.size
 
+    fun updatePlants(newPlants: List<Plant>) {
+        val diffCallback = PlantDiffCallback(plants, newPlants)
+        val diffResult = DiffUtil.calculateDiff(diffCallback)
+        this.plants = newPlants
+        diffResult.dispatchUpdatesTo(this)
+    }
+
     private class PlantDiffCallback(
         private val oldList: List<Plant>,
         private val newList: List<Plant>
     ) : DiffUtil.Callback() {
 
-        override fun getOldListSize(): Int {
-            return oldList.size
-        }
-
-        override fun getNewListSize(): Int {
-            return newList.size
-        }
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
 
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
             return oldList[oldItemPosition].StockID == newList[newItemPosition].StockID

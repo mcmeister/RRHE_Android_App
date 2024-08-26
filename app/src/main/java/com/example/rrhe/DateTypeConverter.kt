@@ -9,7 +9,7 @@ import java.util.Locale
 
 class DateTypeConverter : JsonDeserializer<Date>, JsonSerializer<Date> {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
 
     @TypeConverter
     fun fromTimestamp(value: Long?): Date? {
