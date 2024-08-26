@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Grant access to the app's internal storage directory for pictures -->
+    <external-files-path name="external_files" path="." />
+</paths>

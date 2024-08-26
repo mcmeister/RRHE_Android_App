@@ -2,9 +2,10 @@ package com.example.rrhe
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
+import android.os.Parcelable
 import android.view.LayoutInflater
-import android.view.ViewGroup
+import android.view.MotionEvent
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -12,88 +13,140 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.rrhe.ui.theme.RRHETheme
 
 class StockScreen : AppCompatActivity() {
 
+    private lateinit var inactivityDetector: InactivityDetector
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        inactivityDetector = InactivityDetector(this)
         setContent {
             val viewModel: StockViewModel = viewModel()
-            StockScreenComposable(viewModel)
+            StockScreenComposable(viewModel, inactivityDetector)
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        inactivityDetector.reset()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        inactivityDetector.stop()
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        inactivityDetector.reset()
+        return super.onTouchEvent(event)
     }
 }
 
 @Composable
-fun StockScreenComposable(viewModel: StockViewModel = viewModel()) {
-    val plants by viewModel.plants.collectAsState()
-    val plantDetailsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == AppCompatActivity.RESULT_OK) {
-            viewModel.updatePlantList(PlantRepository.plants.value ?: emptyList())
-        }
-    }
+fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDetector: InactivityDetector) {
+    RRHETheme {
+        val plants by viewModel.plants.collectAsState()
+        val context = LocalContext.current
 
-    AndroidView(factory = { ctx ->
-        // Create a parent container
-        val parent = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-        // Inflate the layout with the parent container
-        LayoutInflater.from(ctx).inflate(R.layout.screen_stock, parent, false)
-    }, update = { view ->
-        // Handle the search bar
-        val searchIcon = view.findViewById<ImageView>(R.id.searchIcon)
-        val searchBarLayout = view.findViewById<LinearLayout>(R.id.searchBarLayout)
-        val searchEditText = view.findViewById<EditText>(R.id.searchEditText)
-        val qrCodeButton = view.findViewById<ImageView>(R.id.qrCodeButton)
-        val clearSearchButton = view.findViewById<ImageView>(R.id.clearSearchButton)
-        val plantList = view.findViewById<RecyclerView>(R.id.plantList)
+        var searchBar: SearchBar? = null // Declare searchBar variable
 
-        // Initialize SearchBar functionality
-        Log.d("StockScreen", "Initializing SearchBar")
-        SearchBar(
-            searchBarLayout = searchBarLayout,
-            searchEditText = searchEditText,
-            searchIcon = searchIcon,
-            qrCodeButton = qrCodeButton,
-            clearSearchButton = clearSearchButton,
-            onSearch = { query -> viewModel.updateSearchQuery(query) }
-        )
-
-        // Handle RecyclerView for displaying plants
-        plantList.layoutManager = LinearLayoutManager(view.context)
-        val adapter = PlantAdapter(plants)
-        plantList.adapter = adapter
-
-        // Ensure adapter is updated with the new plant list
-        Log.d("StockScreen", "Updating adapter with plants: ${plants.size}")
-        adapter.updatePlants(plants)
-        if (plants.isEmpty()) {
-            Log.d("StockScreen", "Plants list is empty")
-        } else {
-            Log.d("StockScreen", "Plants list has ${plants.size} items")
-        }
-
-        adapter.setOnItemClickListener { plant ->
-            val intent = Intent(view.context, PlantDetailsActivity::class.java).apply {
-                putExtra("NameConcat", plant.NameConcat)
-                putExtra("StockID", plant.StockID)
-                putExtra("StockQty", plant.StockQty)
-                putExtra("StockPrice", plant.StockPrice)
-                putExtra("Family", plant.Family)
-                putExtra("Species", plant.Species)
-                putExtra("Subspecies", plant.Subspecies)
-                putExtra("PlantDescription", plant.PlantDescription)
-                putExtra("PhotoLink1", plant.PhotoLink1)
+        val plantDetailsLauncher =
+            rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                    viewModel.updatePlantList(PlantRepository.plants.value ?: emptyList())
+                }
             }
-            plantDetailsLauncher.launch(intent)
+
+        val qrScannerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                val scannedStockId = result.data?.getStringExtra("scannedStockId")
+                if (!scannedStockId.isNullOrEmpty()) {
+                    searchBar?.setSearchText(scannedStockId) // Access searchBar here
+                }
+            }
         }
-    })
+
+        AndroidView(factory = { ctx ->
+            val inflater = LayoutInflater.from(ctx)
+            val parent = LinearLayout(ctx)
+            inflater.inflate(R.layout.screen_stock, parent, false)
+        }, update = { view ->
+            val searchIcon = view.findViewById<ImageView>(R.id.searchIcon)
+            val searchBarLayout = view.findViewById<LinearLayout>(R.id.searchBarLayout)
+            val searchEditText = view.findViewById<EditText>(R.id.searchEditText)
+            val qrCodeButton = view.findViewById<ImageView>(R.id.qrCodeButton)
+            val clearSearchButton = view.findViewById<ImageView>(R.id.clearSearchButton)
+            val motherFilterButton = view.findViewById<ImageView>(R.id.motherFilterButton)
+            val websiteFilterButton = view.findViewById<ImageView>(R.id.websiteFilterButton)
+            val plantList = view.findViewById<RecyclerView>(R.id.plantList)
+            val fabAddNewPlant = view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fab_add_new_plant)
+
+            searchBar = SearchBar( // Initialize searchBar
+                searchBarLayout = searchBarLayout,
+                searchEditText = searchEditText,
+                searchIcon = searchIcon,
+                qrCodeButton = qrCodeButton,
+                clearSearchButton = clearSearchButton,
+                motherFilterButton = motherFilterButton,
+                websiteFilterButton = websiteFilterButton,
+                onSearch = { query, filterMother, filterWebsite ->
+                    viewModel.updateSearchQuery(query, filterMother, filterWebsite)
+                    inactivityDetector.reset()
+                }
+            )
+
+            val adapter = PlantAdapter(plants, inactivityDetector)
+            plantList.adapter = adapter
+
+            plantList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    if (dy > 0) {
+                        searchIcon.visibility = View.GONE
+                        fabAddNewPlant.hide()
+                    } else if (dy < 0) {
+                        if (searchBarLayout.visibility == View.GONE) {
+                            searchIcon.visibility = View.VISIBLE
+                        }
+                        fabAddNewPlant.show()
+                    }
+                }
+            })
+
+            clearSearchButton.setOnClickListener {
+                searchBar?.clearSearch()
+                inactivityDetector.reset()
+            }
+
+            qrCodeButton.setOnClickListener {
+                val intent = Intent(context, QRScannerActivity::class.java)
+                qrScannerLauncher.launch(intent)
+            }
+
+            fabAddNewPlant.setOnClickListener {
+                val intent = Intent(context, NewPlantActivity::class.java)
+                context.startActivity(intent)
+                inactivityDetector.reset()
+            }
+
+            adapter.setOnItemClickListener { plant ->
+                val intent = Intent(context, PlantDetailsActivity::class.java).apply {
+                    putExtra("plant", plant as Parcelable)
+                }
+                plantDetailsLauncher.launch(intent)
+                inactivityDetector.reset()
+            }
+
+            plantList.layoutManager = LinearLayoutManager(view.context)
+            adapter.updatePlants(plants)
+        })
+    }
 }

@@ -1,0 +1,7 @@
+<resources>
+    <!-- Define custom attributes for light and dark themes -->
+    <attr name="textColorPrimary" format="reference|color"/>
+    <attr name="textColorSecondary" format="reference|color"/>
+    <attr name="colorBackground" format="reference|color"/>
+    <attr name="searchIconColor" format="color" />
+</resources>

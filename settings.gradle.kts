@@ -11,8 +11,9 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)  // Adjusted to prefer settings over project repos
     repositories {
         google()
         mavenCentral()
@@ -21,4 +22,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "RRHE"
 include(":app")
- 

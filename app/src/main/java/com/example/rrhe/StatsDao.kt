@@ -7,9 +7,12 @@ import androidx.room.Query
 
 @Dao
 interface StatsDao {
-    @Query("SELECT * FROM stats")
+    @Query("SELECT * FROM stats ORDER BY Stamp DESC")
     fun getAllStats(): List<Stats>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertStats(stats: Stats)
+
+    @Query("SELECT * FROM stats ORDER BY Stamp DESC LIMIT 1")
+    fun getLatestStats(): Stats
 }

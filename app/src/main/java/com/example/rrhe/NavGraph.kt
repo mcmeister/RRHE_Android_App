@@ -2,6 +2,7 @@ package com.example.rrhe
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -9,7 +10,8 @@ import androidx.navigation.compose.composable
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    inactivityDetector: InactivityDetector // Pass the inactivityDetector here
 ) {
     NavHost(
         navController = navController,
@@ -17,10 +19,12 @@ fun NavGraph(
         modifier = modifier
     ) {
         composable(Screen.StockScreen.route) {
-            StockScreenComposable()
+            val stockViewModel: StockViewModel = viewModel()
+            StockScreenComposable(stockViewModel, inactivityDetector) // Pass it to StockScreenComposable
         }
         composable(Screen.StatsScreen.route) {
-            StatsScreenComposable()
+            val statsViewModel: StatsViewModel = viewModel()
+            StatsScreenComposable(statsViewModel, inactivityDetector) // Pass it to StatsScreenComposable
         }
     }
 }

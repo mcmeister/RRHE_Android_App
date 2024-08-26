@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
 
 class SearchBar(
@@ -13,39 +14,78 @@ class SearchBar(
     private val searchIcon: ImageView,
     qrCodeButton: ImageView,
     clearSearchButton: ImageView,
-    private val onSearch: (String) -> Unit
+    private val motherFilterButton: ImageView,
+    private val websiteFilterButton: ImageView,
+    private val onSearch: (String, Boolean, Boolean) -> Unit
 ) {
+    private var filterMother = false
+    private var filterWebsite = false
+
     init {
-        Log.d("SearchBar", "Initializing SearchBar")
+        qrCodeButton.setOnClickListener {
+            Log.d("SearchBar", "QR Code button clicked")
+        }
 
         searchIcon.setOnClickListener {
             searchBarLayout.visibility = View.VISIBLE
             searchIcon.visibility = View.GONE
-            Log.d("SearchBar", "SearchBar visible")
         }
 
         clearSearchButton.setOnClickListener {
-            searchEditText.text.clear()
-            searchBarLayout.visibility = View.GONE
-            searchIcon.visibility = View.VISIBLE
-            Log.d("SearchBar", "SearchBar hidden")
+            clearSearch()
         }
 
         searchEditText.doOnTextChanged { text, _, _, _ ->
-            Log.d("SearchBar", "Search query: $text")
-            onSearch(text.toString())
+            val query = text.toString().trim()
+            onSearch(query, filterMother, filterWebsite)
         }
 
-        qrCodeButton.setOnClickListener {
-            // QR code scanning functionality will be added later
+        motherFilterButton.setOnClickListener {
+            filterMother = !filterMother
+            updateFilterButtonColors()
+            onSearch(searchEditText.text.toString(), filterMother, filterWebsite)
+        }
+
+        websiteFilterButton.setOnClickListener {
+            filterWebsite = !filterWebsite
+            updateFilterButtonColors()
+            onSearch(searchEditText.text.toString(), filterMother, filterWebsite)
         }
 
         searchBarLayout.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus) {
                 searchBarLayout.visibility = View.GONE
                 searchIcon.visibility = View.VISIBLE
-                Log.d("SearchBar", "SearchBar lost focus and hidden")
             }
         }
+    }
+
+    fun clearSearch() {
+        searchEditText.text.clear()
+        filterMother = false
+        filterWebsite = false
+        resetFilterButtonColors()
+        onSearch("", filterMother, filterWebsite)
+        searchBarLayout.visibility = View.GONE
+        searchIcon.visibility = View.VISIBLE
+    }
+
+    fun setSearchText(stockId: String) {
+        searchEditText.setText(stockId)
+        onSearch(stockId, filterMother, filterWebsite)
+    }
+
+    private fun updateFilterButtonColors() {
+        val activeColor = ContextCompat.getColor(searchBarLayout.context, R.color.filter_active)
+        val inactiveColor = ContextCompat.getColor(searchBarLayout.context, R.color.filter_inactive)
+
+        motherFilterButton.setColorFilter(if (filterMother) activeColor else inactiveColor)
+        websiteFilterButton.setColorFilter(if (filterWebsite) activeColor else inactiveColor)
+    }
+
+    private fun resetFilterButtonColors() {
+        val blackColor = ContextCompat.getColor(searchBarLayout.context, android.R.color.black)
+        motherFilterButton.setColorFilter(blackColor)
+        websiteFilterButton.setColorFilter(blackColor)
     }
 }

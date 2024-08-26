@@ -1,5 +1,6 @@
 package com.example.rrhe
 
+import com.google.gson.GsonBuilder
 import okhttp3.ConnectionPool
 import okhttp3.JavaNetCookieJar
 import okhttp3.OkHttpClient
@@ -9,45 +10,71 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.net.CookieManager
 import java.net.CookiePolicy
 import java.util.concurrent.TimeUnit
-import com.google.gson.GsonBuilder
-import java.util.Date
 
 object ApiClient {
 
-    private fun getClient(isEmulator: Boolean): Retrofit {
+    private val okHttpClientBuilder = OkHttpClient.Builder()
+    private lateinit var okHttpClient: OkHttpClient
+
+    private fun createClient(baseUrl: String): Retrofit {
         val cookieManager = CookieManager().apply {
             setCookiePolicy(CookiePolicy.ACCEPT_ALL)
         }
 
-        val okHttpClientBuilder = OkHttpClient.Builder()
+        okHttpClientBuilder
             .cookieJar(JavaNetCookieJar(cookieManager))
-            .retryOnConnectionFailure(false)
-            .connectTimeout(2, TimeUnit.MINUTES)
-            .readTimeout(2, TimeUnit.MINUTES)
-            .writeTimeout(2, TimeUnit.MINUTES)
+            .retryOnConnectionFailure(true)  // Allow retries on connection failures
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
 
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            // You can adjust this to HttpLoggingInterceptor.Level.BODY for more detailed logs
+            level = HttpLoggingInterceptor.Level.BASIC
         }
         okHttpClientBuilder.addInterceptor(logging)
         okHttpClientBuilder.addInterceptor { chain ->
             val request = chain.request().newBuilder()
                 .addHeader("Accept-Encoding", "identity")
-                .addHeader("Connection", "close")
+                // Removed Connection: close header to allow connection reuse
                 .build()
             chain.proceed(request)
         }
-        okHttpClientBuilder.connectionPool(ConnectionPool(0, 1, TimeUnit.NANOSECONDS))
+        okHttpClientBuilder.addInterceptor(RetryInterceptor())
+        okHttpClientBuilder.connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))  // Increased connection pool timeout
+
+        okHttpClient = okHttpClientBuilder.build()
 
         val gson = GsonBuilder()
-            .registerTypeAdapter(Date::class.java, DateTypeConverter())
+            .setLenient()
             .create()
 
         return Retrofit.Builder()
-            .baseUrl(ApiConfig.getBaseUrl(isEmulator))
+            .baseUrl(baseUrl)
             .addConverterFactory(GsonConverterFactory.create(gson))
-            .client(okHttpClientBuilder.build())
+            .client(okHttpClient)
             .build()
+    }
+
+    // Regular instance method for use in the app
+    private fun getClient(baseUrl: String): Retrofit {
+        return createClient(baseUrl)
+    }
+
+    // Static method for use in MyFirebaseMessagingService
+    @JvmStatic
+    fun getStaticClient(baseUrl: String): Retrofit {
+        return createClient(baseUrl)
+    }
+
+    // Main API service
+    val apiService: ApiService by lazy {
+        getClient(ApiConfig.getBaseUrl(isEmulator())).create(ApiService::class.java)
+    }
+
+    // HTTP Server API service for photo uploads
+    val httpServerApiService: ApiService by lazy {
+        getClient(ApiConfig.getHttpServerBaseUrl()).create(ApiService::class.java)
     }
 
     private fun isEmulator(): Boolean {
@@ -60,7 +87,46 @@ object ApiClient {
                 || "google_sdk" == android.os.Build.PRODUCT)
     }
 
-    val apiService: ApiService by lazy {
-        getClient(isEmulator()).create(ApiService::class.java)
+    // Static method for use in MyFirebaseMessagingService
+    @JvmStatic
+    fun isStaticEmulator(): Boolean {
+        return isEmulator()
+    }
+
+    fun closeAllConnections() {
+        okHttpClient.connectionPool.evictAll()
+        okHttpClient.dispatcher.cancelAll()
+    }
+}
+
+class RetryInterceptor : okhttp3.Interceptor {
+    private val maxRetries = 1
+    private val retryDelayMillis = 1000L
+
+    override fun intercept(chain: okhttp3.Interceptor.Chain): okhttp3.Response {
+        val request = chain.request()
+        var response: okhttp3.Response? = null
+        var attempts = 0
+
+        while (attempts < maxRetries) {
+            try {
+                response = chain.proceed(request)
+                if (response.isSuccessful) {
+                    return response
+                } else {
+                    response.close()
+                }
+            } catch (e: Exception) {
+                if (attempts >= maxRetries - 1) {
+                    response?.close()
+                    throw e
+                }
+                response?.close()
+                Thread.sleep(retryDelayMillis)
+            }
+            attempts++
+        }
+
+        return response ?: chain.proceed(request)
     }
 }

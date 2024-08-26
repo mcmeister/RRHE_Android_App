@@ -4,9 +4,9 @@
     <string name="plant_name">Plant Name</string>
     <string name="plant_stock">Plant Stock</string>
     <string name="stock">Stock</string>
-    <string name="stock_text">Stock: %1$d</string>
-    <string name="stock_id_text">Stock ID: %1$d</string>
-    <string name="stock_price_text">Stock Price: %1$.2f</string>
+    <string name="stock_qty">Stock Qty: %1$d</string>
+    <string name="stock_id">Stock ID: %1$d</string>
+    <string name="stock_price">Stock Price: %1$d</string>
     <string name="plant_image_description">Image of the plant</string>
     <string name="image_popup_description">Full screen image</string>
     <string name="error_image_description">Error image</string>
@@ -27,27 +27,145 @@
     <string name="subspecies_hint">Subspecies</string>
     <string name="stock_qty_hint">Stock Quantity</string>
     <string name="stock_price_hint">Stock Price</string>
+    <string name="purchase_price_hint">Purchase Price</string>
+    <string name="usd_hint">USD</string>
+    <string name="eur_hint">EUR</string>
+    <string name="usd_edit_text">USD: %1$d</string>
+    <string name="eur_edit_text">EUR: %1$d</string>
+    <string name="total_value_edit_text">Total Value: %1$d</string>
     <string name="plant_description_hint">Plant Description</string>
+    <string name="thai_name_hint">Thai Name</string>
+    <string name="stock_id_hint">Stock ID</string>
+    <string name="m_id_hint">Mother Plant</string>
+    <string name="f_id_hint">Father Plant</string>
+    <string name="plant_status_hint">Plant Status</string>
+    <string name="status_note_hint">Status Note</string>
+    <string name="mother_hint">Mother</string>
+    <string name="website_hint">Website</string>
+    <string name="table_name_edit_text">Table Name</string>
+    <string name="tray_size_hint">Tray Size</string>
+    <string name="grams_hint">Grams</string>
+    <string name="total_value_hint">Total Value</string>
+    <string name="date_range_format">%1$s - %2$s</string>
+    <string name="planted_hint">Planted</string>
+    <string name="planted_start_text">Planted Start</string>
+    <string name="planted_end_text">Planted End</string>
+    <string name="pollinate_date_hint">Pollinate Date</string>
+    <string name="seeds_planted_hint">Seeds Planted</string>
+    <string name="seeds_harvest_hint">Seeds Harvest</string>
+    <string name="photo_link1_hint">Photo Link 1</string>
+    <string name="photo_link2_hint">Photo Link 2</string>
+    <string name="photo_link3_hint">Photo Link 3</string>
+    <string name="photo_link4_hint">Photo Link 4</string>
     <string name="save">Save</string>
 
     <!-- New strings for Stats screen -->
     <string name="stats">Stats</string>
-    <string name="total_rows">Total Rows: %1$d</string>
-    <string name="total_plants">Total Plants: %1$d</string>
-    <string name="total_non_m">Total Non-Mother Plants: %1$d</string>
-    <string name="total_m">Total Mother Plants: %1$d</string>
-    <string name="non_m_value">Non-Mother Plants Value: %1$.2f</string>
-    <string name="m_value">Mother Plants Value: %1$.2f</string>
-    <string name="total_value">Total Value: %1$.2f</string>
-    <string name="web_plants">Web Plants: %1$d</string>
-    <string name="web_qty">Web Quantity: %1$d</string>
-    <string name="web_value">Web Value: %1$.2f</string>
-    <string name="usd">USD: %1$.2f</string>
-    <string name="eur">EUR: %1$.2f</string>
+    <string name="total_rows">Total Rows:\n%,d</string>
+    <string name="total_plants">Total Plants:\n%,d</string>
+    <string name="total_non_m">Total Non-Mother Plants:\n%,d</string>
+    <string name="total_m">Total Mother Plants:\n%,d</string>
+    <string name="non_m_value">Non-Mother Plants Value:\nTHB %,.0f</string>
+    <string name="m_value">Mother Plants Value:\nTHB %,.0f</string>
+    <string name="total_value">Total Value:\nTHB %,.0f</string>
+    <string name="web_plants">Web Plants:\n%,d</string>
+    <string name="web_qty">Web Quantity:\n%,d</string>
+    <string name="web_value">Web Value:\nTHB %,.0f</string>
+    <string name="rates_text">Exchange Rates:</string>
+    <string name="usd">USD:\n%1$.5f</string>
+    <string name="eur">EUR:\n%1$.5f</string>
+    <string name="stats_stamp">Stamp:\n%1$s</string>
 
     <!-- Missing strings -->
     <string name="search_icon">Search</string>
     <string name="clear_search">Clear</string>
     <string name="qr_code_button">Scan QR Code</string>
     <string name="add_plant">Add Plant</string>
+
+    <!-- New strings for Plant Details screen -->
+    <string name="plant_name_text">Plant Name: %1$s</string>
+    <string name="thai_name_text">Thai Name: %1$s</string>
+    <string name="m_id_text">Mother Plant:\n%1$d</string>
+    <string name="f_id_text">Father Plant:\n%1$d</string>
+    <string name="stock_id_text">Stock ID:\n%1$d</string>
+    <string name="mother_text">Mother:\n%1$s</string>
+    <string name="website_text">Website:\n%1$s</string>
+    <string name="table_name_text">Table Name:\n%1$s</string>
+    <string name="planted_text">Planted:\n%1$s - %2$s</string>
+    <string name="pollinate_date_text">Pollinate Date:\n%1$s</string>
+    <string name="seeds_planted_text">Seeds Planted:\n%1$s</string>
+    <string name="seeds_harvest_text">Seeds Harvest:\n%1$s</string>
+    <string name="plant_status_text">Plant Status:\n%1$s</string>
+    <string name="status_note_text">Status Note:\n%1$s</string>
+    <string name="stock_qty_text">Stock Qty:\n%1$d</string>
+    <string name="stock_price_text">Stock Price:\n%1$d</string>
+    <string name="purchase_price_text">Purchase Price:\n%1$d</string>
+    <string name="total_value_text">Total Value:\n%1$d</string>
+    <string name="usd_text">USD:\n%1$d</string>
+    <string name="eur_text">EUR:\n%1$d</string>
+    <string name="photo1_text">Photo 1: %1$s</string>
+    <string name="photo2_text">Photo 2: %1$s</string>
+    <string name="photo3_text">Photo 3: %1$s</string>
+    <string name="photo4_text">Photo 4: %1$s</string>
+    <string name="photo_link1_text">Photo Link 1: %1$s</string>
+    <string name="photo_link2_text">Photo Link 2: %1$s</string>
+    <string name="photo_link3_text">Photo Link 3: %1$s</string>
+    <string name="photo_link4_text">Photo Link 4: %1$s</string>
+    <string name="added_by_text">Added By:\n%1$s</string>
+    <string name="last_edited_by_text">Last Edited By:\n%1$s</string>
+    <string name="weight_text">Weight:\n%1$s</string>
+    <string name="grams_text">Grams:\n%1$d</string>
+    <string name="tray_size_text">Tray Size:\n%1$s</string>
+    <string name="tray_qty_text">Tray Quantity:\n%1$d</string>
+    <string name="variegated_text">Variegated:\n%1$s</string>
+    <string name="images">Images:</string>
+    <string name="plant_description_text">Plant Description:\n%1$s</string>
+    <string name="images_label">Images:</string>
+
+    <!-- Strings with placeholders for formatting -->
+    <string name="thai_name_format">%1$s %2$s %3$s</string>
+    <string name="thai_name_format_no_subspecies">%1$s %2$s</string>
+    <string name="name_concat_format">%1$s %2$s %3$s</string>
+    <string name="select_date_range">Select date range</string>
+    <string name="select_date">Select date</string>
+    <string name="app_version">V 1.0</string>
+    <string name="plant_id_text_format">Stock ID: %1$d, %2$s, Stock Price: %3$d (Qty: %4$d)</string>
+
+    <!-- Strings for statuses -->
+    <string-array name="statuses">
+        <item>Purchase</item>
+        <item>Propagate</item>
+        <item>Pollinate</item>
+        <item>In Stock</item>
+        <item>Lost</item>
+        <item>Sold</item>
+    </string-array>
+
+    <!-- Strings for Table name -->
+    <string name="table_name_hint">Table Name</string>
+    <string name="login">Login</string>
+    <string name="password">Password</string>
+    <string name="save_password">Save Password</string>
+    <string name="login_button">Login</string>
+    <string name="new_plant_title">New Plant</string>
+    <string name="add_new_plant">Add New Plant</string>
+    <string-array name="letter_array">
+        <item>A</item>
+        <item>B</item>
+        <item>C</item>
+        <item>D</item>
+    </string-array>
+
+    <string-array name="number_array">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+    </string-array>
 </resources>
