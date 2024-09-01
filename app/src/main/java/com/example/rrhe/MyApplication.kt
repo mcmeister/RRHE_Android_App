@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import androidx.room.Room
 import androidx.work.Configuration
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineScope
@@ -25,7 +26,9 @@ class MyApplication : Application() {
             initializeDatabase()
             initializeWorkManager()
             initializeRepositories()
-            scheduleNotificationWorker()
+
+            // Use the immediate trigger method for testing
+            triggerNotificationWorkerImmediately()
         } catch (e: Exception) {
             Log.e("MyApplication", "Error during initialization: ${e.message}", e)
         }
@@ -59,9 +62,21 @@ class MyApplication : Application() {
     }
 
     private fun scheduleNotificationWorker() {
+        // Commented out for testing purposes
+        /*
         val workRequest = PeriodicWorkRequestBuilder<NotificationWorker>(1, TimeUnit.DAYS)
             .setInitialDelay(calculateInitialDelay(), TimeUnit.MILLISECONDS)
             .addTag("notification_worker")
+            .build()
+
+        WorkManager.getInstance(this).enqueue(workRequest)
+        */
+    }
+
+    private fun triggerNotificationWorkerImmediately() {
+        // Trigger NotificationWorker immediately
+        val workRequest = OneTimeWorkRequestBuilder<NotificationWorker>()
+            .addTag("notification_worker_test")
             .build()
 
         WorkManager.getInstance(this).enqueue(workRequest)

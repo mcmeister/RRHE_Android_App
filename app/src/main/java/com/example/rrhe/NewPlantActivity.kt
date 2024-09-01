@@ -57,6 +57,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
     }
 
     private fun handlePlantSave() {
+        InactivityDetector(this).reset()
         lifecycleScope.launch {
             // Save plant locally and sync with the main database
             PlantSaveManager.savePlantLocallyAndSync(
@@ -103,6 +104,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
 
         // Save button listener
         binding.saveButton.setOnClickListener {
+            InactivityDetector(this).reset()
             handlePlantSave()
         }
 
@@ -228,6 +230,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
                     binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope)
                 )
                 if (motherPlants.isNotEmpty()) {
+                    InactivityDetector(this@NewPlantActivity).reset()
                     PlantDropdownAdapter.applyMotherPlantAdapter(
                         binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope),
                         motherPlants = motherPlants
@@ -239,6 +242,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
                     binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope)
                 )
                 if (fatherPlants.isNotEmpty()) {
+                    InactivityDetector(this@NewPlantActivity).reset()
                     PlantDropdownAdapter.applyFatherPlantAdapter(
                         binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope),
                         fatherPlants = fatherPlants

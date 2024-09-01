@@ -10,7 +10,11 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.RequestOptions
 import com.example.rrhe.databinding.ItemPlantBinding
 
-class PlantAdapter(private var plants: List<Plant>, private val inactivityDetector: InactivityDetector) : RecyclerView.Adapter<PlantAdapter.PlantViewHolder>() {
+class PlantAdapter(
+    private var plants: List<Plant>,
+    private val inactivityDetector: InactivityDetector,
+    private val textColor: Int // Pass the text color as a parameter
+) : RecyclerView.Adapter<PlantAdapter.PlantViewHolder>() {
 
     private var onItemClickListener: ((Plant) -> Unit)? = null
 
@@ -21,9 +25,13 @@ class PlantAdapter(private var plants: List<Plant>, private val inactivityDetect
     inner class PlantViewHolder(private val binding: ItemPlantBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(plant: Plant) {
             binding.plantName.text = plant.NameConcat
+            binding.plantName.setTextColor(textColor)
             binding.plantStock.text = binding.root.context.getString(R.string.stock_qty, plant.StockQty)
+            binding.plantStock.setTextColor(textColor)
             binding.plantStockId.text = binding.root.context.getString(R.string.stock_id, plant.StockID)
+            binding.plantStockId.setTextColor(textColor)
             binding.plantStockPrice.text = binding.root.context.getString(R.string.stock_price, plant.StockPrice)
+            binding.plantStockPrice.setTextColor(textColor)
 
             val requestOptions = RequestOptions()
                 .circleCrop()
@@ -38,11 +46,11 @@ class PlantAdapter(private var plants: List<Plant>, private val inactivityDetect
             // Click listener for the root view to navigate to plant details
             binding.root.setOnClickListener {
                 inactivityDetector.reset()  // Reset inactivity timer on plant item click
-                val context = it.context
-                val intent = Intent(context, PlantDetailsActivity::class.java).apply {
+                val ctx = it.context
+                val intent = Intent(ctx, PlantDetailsActivity::class.java).apply {
                     putExtra("plant", plant)
                 }
-                context.startActivity(intent)
+                ctx.startActivity(intent)
             }
 
             // Click listener for the plant image to open in fullscreen

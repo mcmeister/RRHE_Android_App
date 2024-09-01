@@ -1,5 +1,6 @@
 package com.example.rrhe
 
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -21,6 +22,7 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.core.content.ContextCompat
 
 interface PlantBindingActivity {
     val familyAutoCompleteTextView: AutoCompleteTextView
@@ -77,15 +79,32 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         binding = ActivityEditPlantBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Adjust the label colors for dark mode using a helper method
+        adjustLabelColors()
+
         currentPlant = getPlantFromIntent()
 
         currentPlant?.let {
-            PlantUIUpdater.updateUI(binding, it) // Utilize PlantUIUpdater to handle UI, including date fields
+            PlantUIUpdater.updateUI(binding, it)
         }
 
         setupDropdownAdapters(currentPlant)
         setupListeners()
         setupBackButtonCallback()
+    }
+
+    private fun adjustLabelColors() {
+        val textColor = if (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES) {
+            ContextCompat.getColor(this, R.color.dark_mode_text_color) // Define a custom color resource in your colors.xml
+        } else {
+            ContextCompat.getColor(this, R.color.default_label_color)
+        }
+
+        binding.familyAutoCompleteTextView.setHintTextColor(textColor)
+        binding.speciesAutoCompleteTextView.setHintTextColor(textColor)
+        binding.subspeciesAutoCompleteTextView.setHintTextColor(textColor)
+        binding.mIdAutoCompleteTextView.setHintTextColor(textColor)
+        binding.fIdAutoCompleteTextView.setHintTextColor(textColor)
     }
 
     override fun onResume() {
@@ -414,6 +433,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     }
 
     private fun savePlantLocallyAndSync(plant: Plant) {
+        InactivityDetector(this).reset()
         if (PlantSaveManager.isPhotoUploading) {
             showToast(this, "Please wait until the photo is uploaded")
             return

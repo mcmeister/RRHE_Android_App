@@ -2,7 +2,6 @@ package com.example.rrhe
 
 import android.content.Context
 import android.util.Log
-import androidx.work.Data
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import java.text.SimpleDateFormat
@@ -16,32 +15,45 @@ class NotificationWorker(context: Context, workerParams: WorkerParameters) : Wor
     override fun doWork(): Result {
         Log.d(tag, "doWork: Starting notification worker")
 
-        // Query the database for plants with today's PlantedEnd date
         val todayDate = getCurrentDate()
         Log.d(tag, "doWork: Today's date is $todayDate")
 
-        val plantsReadyForHarvest = MyApplication.instance.database.plantDao().getPlantsReadyForNotification(todayDate)
+        val plantDao = MyApplication.instance.database.plantDao()
+        val plantsReadyForHarvest = plantDao.getPlantsReadyForNotification(todayDate)
+
         Log.d(tag, "doWork: Found ${plantsReadyForHarvest?.size ?: 0} plants ready for harvest")
 
-        // Iterate over the plants and send notifications
-        plantsReadyForHarvest?.forEach { plant ->
-            Log.d(tag, "doWork: Processing plant with StockID ${plant?.StockID} and NameConcat ${plant?.NameConcat}")
-
-            // Prepare data for notification
-            val data = Data.Builder()
-                .putString("StockID", plant?.StockID.toString())
-                .putString("NameConcat", plant?.NameConcat)
-                .build()
-
-            Log.d(tag, "doWork: Notification data prepared for plant ${plant?.NameConcat}")
-
-            // Show the notification with a dynamic title
-            val title = "Harvest ${plant?.NameConcat} Today"
-            val message = "Check details for plant ${plant?.NameConcat}"
-            Log.d(tag, "doWork: Showing notification with title: $title and message: $message")
-
-            showNotification(title, message, data)
+        if (plantsReadyForHarvest.isNullOrEmpty()) {
+            Log.d(tag, "doWork: No plants to notify.")
+            return Result.success()
         }
+
+        // Build a list of maps with NameConcat, TableName, and StockID for each plant
+        val plantList = plantsReadyForHarvest.map { plant ->
+            Log.d(tag, "doWork: Processing plant with StockID ${plant?.StockID}, NameConcat ${plant?.NameConcat}, TableName ${plant?.TableName}")
+            mapOf(
+                "StockID" to plant?.StockID.toString(),
+                "NameConcat" to plant?.NameConcat.orEmpty(),
+                "TableName" to plant?.TableName.orEmpty()
+            )
+        }
+
+        // Create a dynamic title and message based on the number of plants
+        val title = if (plantsReadyForHarvest.size == 1) {
+            "Harvest ${plantsReadyForHarvest.first()?.NameConcat} Today"
+        } else {
+            "Harvest ${plantsReadyForHarvest.size} Plants Today"
+        }
+
+        val message = if (plantsReadyForHarvest.size == 1) {
+            "The plant ${plantsReadyForHarvest.first()?.NameConcat} is ready for harvest today."
+        } else {
+            "The following plants are ready for harvest today:"
+        }
+
+        Log.d(tag, "doWork: Showing notification with title: $title and message: $message")
+
+        showNotification(title, message, plantList)
 
         Log.d(tag, "doWork: Notification worker completed")
         return Result.success()
@@ -52,18 +64,11 @@ class NotificationWorker(context: Context, workerParams: WorkerParameters) : Wor
         return sdf.format(Date())
     }
 
-    private fun showNotification(title: String, message: String, data: Data) {
+    private fun showNotification(title: String, message: String, plants: List<Map<String, String>>) {
         Log.d(tag, "showNotification: Preparing to show notification with title: $title and message: $message")
 
         val appNotificationManager = AppNotificationManager(applicationContext)
-        val notificationData = mapOf(
-            "StockID" to data.getString("StockID").orEmpty(),
-            "NameConcat" to data.getString("NameConcat").orEmpty()
-        )
-
-        Log.d(tag, "showNotification: Notification data map created with StockID: ${notificationData["StockID"]} and NameConcat: ${notificationData["NameConcat"]}")
-
-        appNotificationManager.showScheduledNotification(title, message, notificationData)
+        appNotificationManager.showScheduledNotification(title, message, plants)
 
         Log.d(tag, "showNotification: Notification displayed successfully")
     }

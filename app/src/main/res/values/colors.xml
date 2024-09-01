@@ -20,4 +20,6 @@
     <color name="filter_active">#808080</color>
     <color name="filter_inactive">#000000</color>
     <color name="semi_transparent_background">#B2FFFFFF</color>
+    <color name="default_label_color">#000000</color>
+    <color name="dark_mode_text_color">#FFFFFF</color>
 </resources>

@@ -11,8 +11,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.material3.MaterialTheme
 import com.example.rrhe.ui.theme.RRHETheme
 
 class StatsScreen : ComponentActivity() {
@@ -24,7 +26,7 @@ class StatsScreen : ComponentActivity() {
         inactivityDetector = InactivityDetector(this)
         setContent {
             val viewModel: StatsViewModel = viewModel()
-            StatsScreenComposable(viewModel, inactivityDetector)  // Pass inactivityDetector to Composable
+            StatsScreenComposable(viewModel, inactivityDetector)
         }
     }
 
@@ -49,6 +51,9 @@ fun StatsScreenComposable(viewModel: StatsViewModel = viewModel(), inactivityDet
     RRHETheme {
         val stats by viewModel.stats.collectAsState()
 
+        // Get the colors from the theme
+        val textColor = MaterialTheme.colorScheme.onBackground.toArgb()
+
         LaunchedEffect(Unit) {
             viewModel.syncWithMainDatabase()
         }
@@ -57,43 +62,74 @@ fun StatsScreenComposable(viewModel: StatsViewModel = viewModel(), inactivityDet
             val parent = FrameLayout(context)
             LayoutInflater.from(context).inflate(R.layout.screen_stats, parent, false)
         }, update = { view ->
-            val context = view.context
             stats?.let {
-                view.findViewById<TextView>(R.id.totalRowsTextView).text =
-                    context.getString(R.string.total_rows, it.totalRows)
-                view.findViewById<TextView>(R.id.totalPlantsTextView).text =
-                    context.getString(R.string.total_plants, it.totalPlants)
-                view.findViewById<TextView>(R.id.totalNonMTextView).text =
-                    context.getString(R.string.total_non_m, it.totalNonM)
-                view.findViewById<TextView>(R.id.totalMTextView).text =
-                    context.getString(R.string.total_m, it.totalM)
-                view.findViewById<TextView>(R.id.nonMValueTextView).text =
-                    context.getString(R.string.non_m_value, it.nonMValue)
-                view.findViewById<TextView>(R.id.mValueTextView).text =
-                    context.getString(R.string.m_value, it.mValue)
-                view.findViewById<TextView>(R.id.totalValueTextView).text =
-                    context.getString(R.string.total_value, it.totalValue)
-                view.findViewById<TextView>(R.id.webPlantsTextView).text =
-                    context.getString(R.string.web_plants, it.webPlants)
-                view.findViewById<TextView>(R.id.webQtyTextView).text =
-                    context.getString(R.string.web_qty, it.webQty)
-                view.findViewById<TextView>(R.id.webValueTextView).text =
-                    context.getString(R.string.web_value, it.webValue)
-                view.findViewById<TextView>(R.id.ratesTextView).text =
-                    context.getString(R.string.rates_text)
-                view.findViewById<TextView>(R.id.usdTextView).text =
-                    context.getString(R.string.usd, it.usd)
-                view.findViewById<TextView>(R.id.eurTextView).text =
-                    context.getString(R.string.eur, it.eur)
-                view.findViewById<TextView>(R.id.stampTextView).text =
-                    context.getString(R.string.stats_stamp, it.stamp)
+                view.findViewById<TextView>(R.id.statsTitle).apply {
+                    text = context.getString(R.string.stats)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.totalRowsTextView).apply {
+                    text = context.getString(R.string.total_rows, it.totalRows)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.totalPlantsTextView).apply {
+                    text = context.getString(R.string.total_plants, it.totalPlants)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.totalNonMTextView).apply {
+                    text = context.getString(R.string.total_non_m, it.totalNonM)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.totalMTextView).apply {
+                    text = context.getString(R.string.total_m, it.totalM)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.nonMValueTextView).apply {
+                    text = context.getString(R.string.non_m_value, it.nonMValue)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.mValueTextView).apply {
+                    text = context.getString(R.string.m_value, it.mValue)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.totalValueTextView).apply {
+                    text = context.getString(R.string.total_value, it.totalValue)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.webPlantsTextView).apply {
+                    text = context.getString(R.string.web_plants, it.webPlants)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.webQtyTextView).apply {
+                    text = context.getString(R.string.web_qty, it.webQty)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.webValueTextView).apply {
+                    text = context.getString(R.string.web_value, it.webValue)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.ratesTextView).apply {
+                    text = context.getString(R.string.rates_text)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.usdTextView).apply {
+                    text = context.getString(R.string.usd, it.usd)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.eurTextView).apply {
+                    text = context.getString(R.string.eur, it.eur)
+                    setTextColor(textColor)
+                }
+                view.findViewById<TextView>(R.id.stampTextView).apply {
+                    text = context.getString(R.string.stats_stamp, it.stamp)
+                    setTextColor(textColor)
+                }
             }
 
-            // Reset inactivity timer when user interacts with the screen (e.g., scrolls)
+            // Reset inactivity timer when user interacts with the screen
             view.setOnTouchListener { v, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
                     inactivityDetector.reset()
-                    v.performClick()  // Perform click action if needed
+                    v.performClick()
                 }
                 false
             }

@@ -10,7 +10,10 @@ import androidx.annotation.RequiresApi;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -135,8 +138,15 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
     private void handlePlantedEndNotification(String title, String messageBody, Map<String, String> data) {
         Log.d(TAG, "handlePlantedEndNotification: Handling planted end notification.");
-        AppNotificationManager notificationManager = new AppNotificationManager(this);
-        notificationManager.showPlantNotification(title, messageBody, Objects.requireNonNull(data.get("StockID")), Objects.requireNonNull(data.get("NameConcat")));
-    }
 
+        // If you receive a list, you need to handle this list here and pass it to showScheduledNotification
+        List<Map<String, String>> plants = new ArrayList<>();
+        Map<String, String> plantData = new HashMap<>();
+        plantData.put("NameConcat", Objects.requireNonNull(data.get("NameConcat")));
+        plantData.put("TableName", Objects.requireNonNull(data.get("TableName")));
+        plants.add(plantData);
+
+        AppNotificationManager notificationManager = new AppNotificationManager(this);
+        notificationManager.showScheduledNotification(title, messageBody, plants);
+    }
 }

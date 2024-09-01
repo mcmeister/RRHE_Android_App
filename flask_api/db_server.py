@@ -13,12 +13,14 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 def get_db_connection():
-    return pymysql.connect(host='localhost',
-                           user='root',
-                           password='online12',
-                           database='rrhe_db_dev',
-                           charset='utf8mb4',
-                           use_unicode=True)
+    return pymysql.connect(
+        host='localhost',
+        user='root',
+        password='online12',
+        database='rrhe_db_dev',
+        charset='utf8mb4',
+        use_unicode=True
+    )
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()

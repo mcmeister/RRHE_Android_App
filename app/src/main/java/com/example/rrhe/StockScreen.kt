@@ -19,6 +19,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.toArgb
 import com.example.rrhe.ui.theme.RRHETheme
 
 class StockScreen : AppCompatActivity() {
@@ -56,20 +58,23 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
         val plants by viewModel.plants.collectAsState()
         val context = LocalContext.current
 
-        var searchBar: SearchBar? = null // Declare searchBar variable
+        var searchBar: SearchBar? = null
 
-        val plantDetailsLauncher =
-            rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == AppCompatActivity.RESULT_OK) {
-                    viewModel.updatePlantList(PlantRepository.plants.value ?: emptyList())
-                }
+        // Get the colors from the theme
+        val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
+        val textColor = MaterialTheme.colorScheme.onBackground.toArgb()
+
+        val plantDetailsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == AppCompatActivity.RESULT_OK) {
+                viewModel.updatePlantList(PlantRepository.plants.value ?: emptyList())
             }
+        }
 
         val qrScannerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == AppCompatActivity.RESULT_OK) {
                 val scannedStockId = result.data?.getStringExtra("scannedStockId")
                 if (!scannedStockId.isNullOrEmpty()) {
-                    searchBar?.setSearchText(scannedStockId) // Access searchBar here
+                    searchBar?.setSearchText(scannedStockId)
                 }
             }
         }
@@ -89,7 +94,7 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
             val plantList = view.findViewById<RecyclerView>(R.id.plantList)
             val fabAddNewPlant = view.findViewById<com.google.android.material.floatingactionbutton.FloatingActionButton>(R.id.fab_add_new_plant)
 
-            searchBar = SearchBar( // Initialize searchBar
+            searchBar = SearchBar(
                 searchBarLayout = searchBarLayout,
                 searchEditText = searchEditText,
                 searchIcon = searchIcon,
@@ -103,7 +108,12 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
                 }
             )
 
-            val adapter = PlantAdapter(plants, inactivityDetector)
+            // Apply theme-based colors outside the @Composable scope
+            searchEditText.setBackgroundColor(backgroundColor)
+            searchEditText.setTextColor(textColor)
+
+            // Pass the textColor to the PlantAdapter
+            val adapter = PlantAdapter(plants, inactivityDetector, textColor)
             plantList.adapter = adapter
 
             plantList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -150,3 +160,4 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
         })
     }
 }
+

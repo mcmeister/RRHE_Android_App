@@ -2,6 +2,8 @@ package com.example.rrhe
 
 import android.content.Context
 import android.util.Log
+import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Spinner
@@ -106,18 +108,51 @@ object PlantDropdownAdapter {
             // Apply the letter dropdown
             binding.letterSpinner.adapter = letterAdapter
 
-            // Apply the number dropdown
-            binding.numberSpinner.adapter = numberAdapter
+            // Listener for letter spinner to update the number spinner
+            binding.letterSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                    val selectedLetter = parent.getItemAtPosition(position) as String
+                    updateNumberSpinner(binding, selectedLetter)
+                }
 
-            // Split the currentTableName to populate the spinners if possible
+                override fun onNothingSelected(parent: AdapterView<*>) {
+                    // Do nothing
+                }
+            }
+
+            // Apply the number dropdown based on the current table name
             if (currentTableName.length > 1) {
                 val letter = currentTableName.substring(0, 1)
                 val number = currentTableName.substring(1)
 
                 binding.letterSpinner.setSelection(letterAdapter?.getPosition(letter) ?: 0)
+                updateNumberSpinner(binding, letter)
                 binding.numberSpinner.setSelection(numberAdapter?.getPosition(number) ?: 0)
+            } else {
+                // Default selection for new plant
+                binding.letterSpinner.setSelection(0)
+                updateNumberSpinner(binding, "A")
+                binding.numberSpinner.setSelection(0)
             }
         }
+    }
+
+    private fun updateNumberSpinner(binding: PlantBindingWrapper, selectedLetter: String) {
+        val numberArrayResId = when (selectedLetter) {
+            "A", "B", "C", "E" -> R.array.number_array_1_to_6
+            "D", "G" -> R.array.number_array_1_to_16
+            "F" -> R.array.number_array_1_to_24
+            "H" -> R.array.number_array_1_to_19
+            "I" -> R.array.number_array_1_to_2
+            else -> R.array.number_array // Default fallback, should not happen with defined letters
+        }
+
+        numberAdapter = ArrayAdapter(
+            binding.letterSpinner.context,
+            android.R.layout.simple_dropdown_item_1line,
+            binding.letterSpinner.context.resources.getStringArray(numberArrayResId)
+        )
+        binding.numberSpinner.adapter = numberAdapter
     }
 
     private suspend fun handleFamilySelection(context: Context, familyName: String, binding: PlantBindingWrapper) {
