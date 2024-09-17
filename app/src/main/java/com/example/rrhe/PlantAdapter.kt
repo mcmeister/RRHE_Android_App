@@ -33,13 +33,23 @@ class PlantAdapter(
             binding.plantStockPrice.text = binding.root.context.getString(R.string.stock_price, plant.StockPrice)
             binding.plantStockPrice.setTextColor(textColor)
 
+            val context = binding.plantImage.context
+            val baseUrl = ApiConfig.getHttpServerBaseUrl()
+
+            // Construct the full URL for Photo1
+            val photoUrl = if (plant.Photo1?.startsWith("http://") == true || plant.Photo1?.startsWith("https://") == true) {
+                plant.Photo1  // Already a full URL
+            } else {
+                baseUrl + plant.Photo1  // Prepend the base URL
+            }
+
             val requestOptions = RequestOptions()
                 .circleCrop()
                 .placeholder(R.drawable.circle_shape) // Use a circular placeholder
                 .error(R.drawable.circle_shape) // Use the same circular placeholder for errors
 
-            Glide.with(binding.plantImage.context)
-                .load(plant.Photo1)
+            Glide.with(context)
+                .load(photoUrl)
                 .apply(requestOptions)
                 .into(binding.plantImage)
 
@@ -56,8 +66,8 @@ class PlantAdapter(
             // Click listener for the plant image to open in fullscreen
             binding.plantImage.setOnClickListener {
                 inactivityDetector.reset()  // Reset inactivity timer on image click
-                val fragment = ImageDialogFragment.newInstance(plant.Photo1)
-                (binding.root.context as AppCompatActivity).supportFragmentManager
+                val fragment = ImageDialogFragment.newInstance(photoUrl)
+                (context as AppCompatActivity).supportFragmentManager
                     .beginTransaction()
                     .add(fragment, "imageDialog")
                     .commitAllowingStateLoss()

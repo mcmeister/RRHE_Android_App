@@ -32,7 +32,9 @@ import com.example.rrhe.ui.theme.RRHETheme
 
 class MainActivity : AppCompatActivity() {
 
-    private val stockViewModel: StockViewModel by viewModels()
+    private val stockViewModel: StockViewModel by viewModels {
+        ViewModelFactory(application)
+    }
     private lateinit var inactivityDetector: InactivityDetector
     private lateinit var screenLockReceiver: Utils.ScreenLockReceiver
 

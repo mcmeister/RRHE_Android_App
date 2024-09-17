@@ -160,4 +160,3 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
         })
     }
 }
-

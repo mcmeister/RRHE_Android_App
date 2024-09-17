@@ -81,6 +81,7 @@ class AppNotificationManager(private val context: Context) {
 
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("search_query", "today")  // Pass "today" as an extra to be handled in MainActivity
         }
         val pendingIntent = PendingIntent.getActivity(
             context,

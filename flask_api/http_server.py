@@ -34,7 +34,10 @@ def rename_file_if_exists(file_path):
 @app.route('/upload', methods=['POST'])
 def upload_file():
     logger.info("Received file upload request")
-    
+    logger.info(f"Request path: {request.path}")
+    logger.info(f"Request method: {request.method}")
+    logger.info(f"Request headers: {request.headers}")
+
     if 'file' not in request.files:
         logger.error("No file part in the request")
         return jsonify({"error": "No file part"}), 400
@@ -46,6 +49,9 @@ def upload_file():
     
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    # Additional logging to confirm file path
+    logger.info(f"Saving file to: {file_path}")
     
     # Check if a file with the same name already exists
     if os.path.exists(file_path):

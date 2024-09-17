@@ -1,7 +1,10 @@
 package com.example.rrhe
 
+import android.app.Application
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -11,20 +14,24 @@ import androidx.navigation.compose.composable
 fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    inactivityDetector: InactivityDetector // Pass the inactivityDetector here
+    inactivityDetector: InactivityDetector
 ) {
+    // Get Application from LocalContext
+    val application = LocalContext.current.applicationContext as Application
+    val mainViewModelFactory = remember { ViewModelFactory(application) } // Pass Application, not Context
+
     NavHost(
         navController = navController,
         startDestination = Screen.StockScreen.route,
         modifier = modifier
     ) {
         composable(Screen.StockScreen.route) {
-            val stockViewModel: StockViewModel = viewModel()
-            StockScreenComposable(stockViewModel, inactivityDetector) // Pass it to StockScreenComposable
+            val stockViewModel: StockViewModel = viewModel(factory = mainViewModelFactory)
+            StockScreenComposable(stockViewModel, inactivityDetector)
         }
         composable(Screen.StatsScreen.route) {
-            val statsViewModel: StatsViewModel = viewModel()
-            StatsScreenComposable(statsViewModel, inactivityDetector) // Pass it to StatsScreenComposable
+            val statsViewModel: StatsViewModel = viewModel(factory = mainViewModelFactory)
+            StatsScreenComposable(statsViewModel, inactivityDetector)
         }
     }
 }

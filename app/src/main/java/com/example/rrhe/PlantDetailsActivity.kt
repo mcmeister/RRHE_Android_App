@@ -220,6 +220,7 @@ class PlantDetailsActivity : AppCompatActivity() {
             setTextView(pollinateDate, R.string.pollinate_date_text, plant.PollinateDate ?: "")
             setTextView(seedsPlanted, R.string.seeds_planted_text, plant.SeedsPlanted ?: "")
             setTextView(seedsHarvest, R.string.seeds_harvest_text, plant.SeedsHarvest ?: "")
+            setTextView(addedBy, R.string.added_by_text, plant.AddedBy)
             setTextView(lastEditedBy, R.string.last_edited_by_text, plant.LastEditedBy)
 
             // Conditionally show PurchasePrice, Mother Plant ID, and Father Plant ID based on PlantStatus

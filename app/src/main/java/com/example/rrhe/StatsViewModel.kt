@@ -15,12 +15,16 @@ class StatsViewModel : ViewModel() {
 
     private var initialToastShown = false
     private var connectionToastShown = false
+    private var statsObserverAdded = false
 
     init {
         loadStats()
     }
 
     private fun loadStats() {
+        if (statsObserverAdded) return
+        statsObserverAdded = true
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Initialize the StatsRepository and load initial data

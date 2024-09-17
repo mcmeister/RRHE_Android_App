@@ -82,6 +82,10 @@ object PlantRepository {
         }
     }
 
+    fun getAllStockIDs(): List<Int> {
+        return plantDao.getAllStockIDs()
+    }
+
     suspend fun deletePlantByStockID(stockID: Int) {
         withContext(Dispatchers.IO) {
             plantDao.deleteByStockID(stockID)

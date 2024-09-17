@@ -244,6 +244,13 @@
                 </LinearLayout>
 
                 <TextView
+                    android:id="@+id/addedBy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:layout_marginTop="8dp"/>
+
+                <TextView
                     android:id="@+id/lastEditedBy"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -252,7 +259,7 @@
 
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="56dp" />
+                    android:layout_height="60dp" />
 
             </LinearLayout>
         </ScrollView>

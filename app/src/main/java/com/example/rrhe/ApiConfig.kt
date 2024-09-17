@@ -3,10 +3,17 @@ package com.example.rrhe
 object ApiConfig {
     // Base URLs for main database server and HTTP server
     // private const val MAIN_DATABASE_BASE_URL = "http://192.168.1.110:5000/"
-    private const val MAIN_DATABASE_BASE_URL = "http://192.168.1.200:5000/"
+    // private const val MAIN_DATABASE_BASE_URL = "http://192.168.1.200:5000/"
+
+    private const val MAIN_DATABASE_BASE_URL = "http://183.88.230.187:55003/"
+
     private const val EMULATOR_MAIN_DATABASE_BASE_URL = "http://10.0.2.2:5000/"
+    // private const val EMULATOR_MAIN_DATABASE_BASE_URL = "http://183.88.230.187:55003/"
+
     // private const val HTTP_SERVER_BASE_URL = "http://192.168.1.110:8000/"
-    private const val HTTP_SERVER_BASE_URL = "http://192.168.1.200:8000/"
+    // private const val HTTP_SERVER_BASE_URL = "http://192.168.1.200:8000/"
+
+    private const val HTTP_SERVER_BASE_URL = "http://183.88.230.187:55004/"
 
     // Regular instance method for use in the app
     fun getBaseUrl(isEmulator: Boolean): String {

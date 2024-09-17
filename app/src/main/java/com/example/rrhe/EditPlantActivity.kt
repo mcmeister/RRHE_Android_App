@@ -1,18 +1,19 @@
 package com.example.rrhe
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import android.widget.AdapterView
+import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Spinner
-import android.widget.AutoCompleteTextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.rrhe.databinding.ActivityEditPlantBinding
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +23,6 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import androidx.core.content.ContextCompat
 
 interface PlantBindingActivity {
     val familyAutoCompleteTextView: AutoCompleteTextView
@@ -49,6 +49,8 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     private val cameraRequestCode = 101
 
     private var datePickerType: PlantSaveManager.DatePickerType? = null
+
+    private var isPlantSaved = false
 
     override val photoEdit1: ImageView
         get() = binding.photoEdit1
@@ -110,8 +112,11 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     override fun onResume() {
         super.onResume()
         currentPlant?.let {
-            updateUI(it)
-            setupDropdownAdapters(it)
+            // Update only if necessary and avoid resetting images
+            if (!PlantSaveManager.isPhotoUploading) {
+                updateUI(it)
+                setupDropdownAdapters(it)
+            }
         }
         InactivityDetector(this).reset()
     }
@@ -128,7 +133,11 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
             backPressedCallback.remove()
         }
         PhotoManager.clearGlideCache(applicationContext)
-        PhotoManager.deleteTempFiles()
+
+        // Only delete temp files if the plant was saved
+        if (isPlantSaved) {
+            PhotoManager.deleteTempFiles()
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
@@ -192,7 +201,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         }
     }
 
-    fun updateUI(plant: Plant) {
+    private fun updateUI(plant: Plant) {
         PlantUIUpdater.updateUI(binding, plant)
         binding.motherSwitch.isChecked = plant.Mother == 1
         binding.websiteSwitch.isChecked = plant.Website == 1
@@ -215,9 +224,12 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
     private fun loadOrSetPlaceholder(photoUrl: String?, imageView: ImageView) {
         if (photoUrl.isNullOrEmpty()) {
-            imageView.setImageResource(R.drawable.ic_add) // Use your plus icon resource here
+            // Set the plus icon if there's no photo URL
+            imageView.setImageResource(R.drawable.ic_add)
             imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
         } else {
+            // If there's a valid photo URL, load the image
+            // Make sure Glide handles the image without clearing unnecessarily
             PhotoManager.loadImageWithRetry(photoUrl, imageView, this)
         }
     }
@@ -313,6 +325,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         )
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun setupDropdownAdapters(plant: Plant?) {
         Log.d("EditPlantActivity", "Setting up dropdown adapters")
         lifecycleScope.launch {
@@ -336,25 +349,16 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
                 plant?.TableName ?: ""
             )
 
-            // Add listeners for letter and number spinners to reset inactivity detector
-            binding.letterSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                    InactivityDetector(this@EditPlantActivity).reset()
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>) {
-                    // Do nothing
-                }
+            // Add OnTouchListener to letterSpinner to reset inactivity detector on touch
+            binding.letterSpinner.setOnTouchListener { _, _ ->
+                InactivityDetector(this@EditPlantActivity).reset() // Reset inactivity timer
+                false // Return false to let the spinner handle the touch event as usual
             }
 
-            binding.numberSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                    InactivityDetector(this@EditPlantActivity).reset()
-                }
-
-                override fun onNothingSelected(parent: AdapterView<*>) {
-                    // Do nothing
-                }
+            // Add OnTouchListener to numberSpinner to reset inactivity detector on touch
+            binding.numberSpinner.setOnTouchListener { _, _ ->
+                InactivityDetector(this@EditPlantActivity).reset() // Reset inactivity timer
+                false // Return false to let the spinner handle the touch event as usual
             }
 
             // Update species dropdown if family is set
@@ -450,13 +454,16 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
                     currentPlant = plant,
                     lifecycleScope = lifecycleScope,
                     activity = this@EditPlantActivity,
-                    isEditMode = true // Assuming this is for editing, set this based on your use case
+                    isEditMode = true // Assuming this is for editing
                 )
 
                 withContext(Dispatchers.Main) {
                     plant.StockID?.let {
-                        PhotoManager.refreshPhotos(it, this@EditPlantActivity, this@EditPlantActivity, lifecycleScope)
+                        // Clear cache only after the plant is saved
+                        PhotoManager.clearGlideCache(applicationContext)
                     }
+                    // Mark the plant as saved after successfully saving
+                    isPlantSaved = true
                 }
 
             } catch (e: Exception) {
@@ -465,6 +472,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
                     showToast(this@EditPlantActivity, "Error saving plant: ${e.message}")
                 }
             } finally {
+                // Clear temp files after saving
                 PhotoManager.deleteTempFiles()
             }
         }.invokeOnCompletion { throwable ->

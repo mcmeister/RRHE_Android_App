@@ -4,6 +4,8 @@ import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import java.util.LinkedList
+import java.util.Queue
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -16,9 +18,37 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import kotlin.system.exitProcess
 
+private var currentToast: Toast? = null
+private val toastQueue: Queue<String> = LinkedList()
+private val handler = Handler(Looper.getMainLooper())
+private const val TOAST_DELAY = 2000L // Delay in milliseconds between toasts
+
 fun showToast(context: Context, message: String) {
-    Handler(Looper.getMainLooper()).post {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    // Add the message to the queue only if it doesn't already exist to prevent duplicates
+    if (!toastQueue.contains(message)) {
+        toastQueue.add(message)
+    }
+    // If no toast is currently being displayed, show the next one in the queue
+    if (currentToast == null) {
+        showNextToast(context)
+    }
+}
+
+private fun showNextToast(context: Context) {
+    // Retrieve the next message from the queue
+    val message = toastQueue.poll()
+    if (message != null) {
+        // Cancel any currently displayed toast
+        currentToast?.cancel()
+        // Create and show the new toast
+        currentToast = Toast.makeText(context, message, Toast.LENGTH_SHORT)
+        currentToast?.show()
+
+        // Schedule the next toast after the current one finishes
+        handler.postDelayed({
+            currentToast = null
+            showNextToast(context)
+        }, TOAST_DELAY)
     }
 }
 

@@ -5,12 +5,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
-import android.widget.Toast;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.content.FileProvider;
@@ -47,8 +48,14 @@ public class DownloadReceiver extends BroadcastReceiver {
                     public void onReceive(Context ctxt, Intent intent) {
                         long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
                         if (downloadId == id) {
-                            // Download completed, start installation process
-                            installAPK(context);
+                            // Check the status of the download
+                            if (isDownloadSuccessful(ctxt, downloadId)) {
+                                // Download completed, start installation process
+                                installAPK(context);
+                            } else {
+                                Toast.makeText(ctxt, "Download failed. Please check the URL.", Toast.LENGTH_LONG).show();
+                                Log.e(TAG, "Failed to download the APK. The file might be invalid.");
+                            }
                         }
                     }
                 };
@@ -84,6 +91,28 @@ public class DownloadReceiver extends BroadcastReceiver {
             return false;
         }
         return true;
+    }
+
+    private boolean isDownloadSuccessful(Context context, long downloadId) {
+        DownloadManager downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        DownloadManager.Query query = new DownloadManager.Query();
+        query.setFilterById(downloadId);
+
+        try (Cursor cursor = downloadManager.query(query)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int columnIndex = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS);
+                if (DownloadManager.STATUS_SUCCESSFUL == cursor.getInt(columnIndex)) {
+                    String mimeType = downloadManager.getMimeTypeForDownloadedFile(downloadId);
+                    Log.d(TAG, "Download completed. MIME type: " + mimeType);
+                    // Ensure the downloaded file is an APK
+                    return "application/vnd.android.package-archive".equals(mimeType);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking download status: " + e.getMessage(), e);
+        }
+
+        return false;
     }
 
     private void installAPK(Context context) {

@@ -1,3 +1,5 @@
+#! /home/mcmeister/myflaskenv/bin/python
+
 import os
 import time
 import shutil
@@ -20,6 +22,7 @@ app_release_apk = 'app-release.apk'
 version_start = 1.0
 host_ip = '192.168.1.200'
 port = 8080
+external_ip = '183.88.230.187:55005'  # External IP for release server
 log_file = '/home/mcmeister/rrhe_monitor.log'  # Update the path to a directory you have write access to
 
 # FCM Configuration
@@ -81,7 +84,7 @@ class ReusableTCPServer(TCPServer):
 def start_hosting():
     global current_server
     logging.debug("Checking if RRHE.apk is available for hosting...")
-    
+
     if os.path.exists(os.path.join(watch_folder, rrhe_apk)):
         logging.debug(f"Found {rrhe_apk}. Starting to host...")
 
@@ -96,7 +99,8 @@ def start_hosting():
         # Attempt to start the server with retries
         for attempt in range(3):
             try:
-                download_link = f"http://{host_ip}:{port}/{rrhe_apk}"
+                # Always use the external IP for the download link
+                download_link = f"http://{external_ip}/{rrhe_apk}"
                 logging.debug(f"APK will be hosted at: {download_link}")
                 os.chdir(watch_folder)
                 handler = SimpleHTTPRequestHandler
@@ -115,7 +119,6 @@ def start_hosting():
                 else:
                     logging.error("Exceeded maximum retry attempts to start the server.")
                     raise
-
     else:
         logging.debug(f"No {rrhe_apk} found to host.")
         return None
@@ -197,7 +200,7 @@ def send_fcm_notification(topic, title, body):
         'Content-Type': 'application/json; UTF-8',
     }
     
-    download_link = f"http://{host_ip}:{port}/{rrhe_apk}"  # Ensure the correct download link is included
+    download_link = f"http://{external_ip}/{rrhe_apk}"  # Always use the external IP for the download link
 
     message = {
         "message": {

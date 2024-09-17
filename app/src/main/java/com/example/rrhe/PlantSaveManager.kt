@@ -10,6 +10,7 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import com.example.rrhe.databinding.ActivityEditPlantBinding
 import com.example.rrhe.databinding.ActivityNewPlantBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -187,17 +188,22 @@ object PlantSaveManager {
         binding: ActivityEditPlantBinding?,
         newBinding: ActivityNewPlantBinding?,
         currentPlant: Plant?,
-        isEditMode: Boolean
+        isEditMode: Boolean,
+        plantBindingWrapper: PlantValueCalculator.PlantBindingWrapper
     ): Plant {
         val stockID = if (isEditMode) {
-            // In edit mode, use the existing StockID (which should be positive)
             currentPlant?.StockID ?: throw IllegalStateException("Editing mode but StockID is null")
         } else {
-            // In new mode, generate a temporary negative StockID
             generateTempStockID()
         }
 
-        // Upload photos asynchronously via PhotoManager
+        // Fetch calculated values from PlantBindingWrapper
+        val totalValue = plantBindingWrapper.getStockPrice().toIntOrNull()!! * plantBindingWrapper.getStockQty().toIntOrNull()!!
+
+        val usdValue = plantBindingWrapper.getUSD().toIntOrNull()
+        val eurValue = plantBindingWrapper.getEUR().toIntOrNull()
+
+        // Upload photos asynchronously via PhotoManager and handle null cases
         val photo1Path = (binding?.photoEdit1?.tag as? Uri ?: newBinding?.photoEdit1?.tag as? Uri)?.let {
             PhotoManager.uploadPhotoToServer(it, context, stockID, 1)
         }
@@ -237,67 +243,74 @@ object PlantSaveManager {
         }.time
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
 
+        val sharedPreferences = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+        val currentUserName = sharedPreferences.getString("userName", null)
+
         // Process the values with potential NULL conversion for the main database
         val plant = if (isEditMode && currentPlant != null) {
             currentPlant.copy(
-                Family = convertEmptyToNull(binding?.familyAutoCompleteTextView?.text.toString().ifBlank { currentPlant.Family ?: "" }),
-                Species = convertEmptyToNull(binding?.speciesAutoCompleteTextView?.text.toString().ifBlank { currentPlant.Species ?: "" }),
-                Subspecies = convertEmptyToNull(binding?.subspeciesAutoCompleteTextView?.text.toString().ifBlank { currentPlant.Subspecies ?: "" }),
+                Family = convertEmptyToNull(binding?.familyAutoCompleteTextView?.text.toString()),
+                Species = convertEmptyToNull(binding?.speciesAutoCompleteTextView?.text.toString()),
+                Subspecies = convertEmptyToNull(binding?.subspeciesAutoCompleteTextView?.text.toString()),
                 M_ID = motherPlantStockID ?: currentPlant.M_ID,
                 F_ID = fatherPlantStockID ?: currentPlant.F_ID,
-                StockQty = binding?.stockQtyEditText?.text.toString().toIntOrNull() ?: currentPlant.StockQty,
-                StockPrice = binding?.stockPriceEditText?.text.toString().toIntOrNull() ?: currentPlant.StockPrice,
-                PurchasePrice = binding?.purchasePriceEditText?.text.toString().toIntOrNull() ?: currentPlant.PurchasePrice,
-                PlantDescription = convertEmptyToNull(binding?.plantDescriptionEditText?.text.toString().ifBlank { currentPlant.PlantDescription ?: "" }),
-                ThaiName = convertEmptyToNull(binding?.thaiNameText?.text.toString().ifBlank { currentPlant.ThaiName ?: "" }),
-                TableName = convertEmptyToNull("${binding?.letterSpinner?.selectedItem}${binding?.numberSpinner?.selectedItem}".ifBlank { currentPlant.TableName ?: "" }),
-                TraySize = convertEmptyToNull(binding?.traySizeEditText?.text.toString().ifBlank { currentPlant.TraySize ?: "" }),
-                Grams = binding?.gramsEditText?.text.toString().toIntOrNull() ?: currentPlant.Grams,
-                PlantStatus = convertEmptyToNull(binding?.plantStatusAutoCompleteTextView?.text.toString().ifBlank { currentPlant.PlantStatus ?: "" }),
-                StatusNote = convertEmptyToNull(binding?.statusNoteEditText?.text.toString().ifBlank { currentPlant.StatusNote ?: "" }),
+                StockQty = binding?.stockQtyEditText?.text.toString().toIntOrNull()!!,
+                StockPrice = binding?.stockPriceEditText?.text.toString().toIntOrNull(),
+                TotalValue = binding?.totalValueEditText?.text.toString().toIntOrNull() ?: currentPlant.TotalValue,
+                USD = binding?.usdEditText?.text.toString().toIntOrNull() ?: currentPlant.USD,
+                EUR = binding?.eurEditText?.text.toString().toIntOrNull() ?: currentPlant.EUR,
+                PurchasePrice = binding?.purchasePriceEditText?.text.toString().toIntOrNull(),
+                PlantDescription = convertEmptyToNull(binding?.plantDescriptionEditText?.text.toString()),
+                ThaiName = convertEmptyToNull(binding?.thaiNameText?.text.toString()),
+                TableName = convertEmptyToNull("${binding?.letterSpinner?.selectedItem}${binding?.numberSpinner?.selectedItem}"),
+                TraySize = convertEmptyToNull(binding?.traySizeEditText?.text.toString()),
+                Grams = binding?.gramsEditText?.text.toString().toIntOrNull(),
+                PlantStatus = convertEmptyToNull(binding?.plantStatusAutoCompleteTextView?.text.toString()),
+                StatusNote = convertEmptyToNull(binding?.statusNoteEditText?.text.toString()),
                 Mother = if (binding?.motherSwitch?.isChecked == true) 1 else currentPlant.Mother ?: 0,
                 Website = if (binding?.websiteSwitch?.isChecked == true) 1 else currentPlant.Website ?: 0,
                 Photo1 = convertEmptyToNull(photo1Path ?: currentPlant.Photo1),
                 Photo2 = convertEmptyToNull(photo2Path ?: currentPlant.Photo2),
                 Photo3 = convertEmptyToNull(photo3Path ?: currentPlant.Photo3),
                 Photo4 = convertEmptyToNull(photo4Path ?: currentPlant.Photo4),
+                LastEditedBy = currentUserName,
                 Stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
             ).ensureNonNullValues()
         } else {
             Plant(
                 StockID = stockID,
-                Family = convertEmptyToNull(newBinding?.familyAutoCompleteTextView?.text.toString().ifBlank { "" }),
-                Species = convertEmptyToNull(newBinding?.speciesAutoCompleteTextView?.text.toString().ifBlank { "" }),
-                Subspecies = convertEmptyToNull(newBinding?.subspeciesAutoCompleteTextView?.text.toString().ifBlank { "" }),
+                Family = convertEmptyToNull(newBinding?.familyAutoCompleteTextView?.text.toString()),
+                Species = convertEmptyToNull(newBinding?.speciesAutoCompleteTextView?.text.toString()),
+                Subspecies = convertEmptyToNull(newBinding?.subspeciesAutoCompleteTextView?.text.toString()),
                 M_ID = motherPlantStockID,
                 F_ID = fatherPlantStockID,
-                StockQty = newBinding?.stockQtyEditText?.text.toString().toIntOrNull() ?: 0,
-                StockPrice = newBinding?.stockPriceEditText?.text.toString().toIntOrNull() ?: 0,
-                PurchasePrice = newBinding?.purchasePriceEditText?.text.toString().toIntOrNull() ?: 0,
-                PlantDescription = convertEmptyToNull(newBinding?.plantDescriptionEditText?.text.toString().ifBlank { "" }),
-                NameConcat = convertEmptyToNull(newBinding?.nameConcatText?.text.toString().ifBlank { "" }),
-                ThaiName = convertEmptyToNull(newBinding?.thaiNameText?.text.toString().ifBlank { "" }),
-                TableName = convertEmptyToNull("${newBinding?.letterSpinner?.selectedItem}${newBinding?.numberSpinner?.selectedItem}".ifBlank { "" }),
-                TraySize = convertEmptyToNull(newBinding?.traySizeEditText?.text.toString().ifBlank { "" }),
+                StockQty = newBinding?.stockQtyEditText?.text.toString().toIntOrNull()!!,
+                StockPrice = newBinding?.stockPriceEditText?.text.toString().toIntOrNull(),
+                TotalValue = totalValue,
+                USD = usdValue,
+                EUR = eurValue,
+                PurchasePrice = newBinding?.purchasePriceEditText?.text.toString().toIntOrNull(),
+                PlantDescription = convertEmptyToNull(newBinding?.plantDescriptionEditText?.text.toString()),
+                NameConcat = convertEmptyToNull(newBinding?.nameConcatText?.text.toString()),
+                ThaiName = convertEmptyToNull(newBinding?.thaiNameText?.text.toString()),
+                TableName = convertEmptyToNull("${newBinding?.letterSpinner?.selectedItem}${newBinding?.numberSpinner?.selectedItem}"),
+                TraySize = convertEmptyToNull(newBinding?.traySizeEditText?.text.toString()),
                 Grams = newBinding?.gramsEditText?.text.toString().toIntOrNull(),
-                PlantStatus = convertEmptyToNull(newBinding?.plantStatusAutoCompleteTextView?.text.toString().ifBlank { "" }),
-                StatusNote = convertEmptyToNull(newBinding?.statusNoteEditText?.text.toString().ifBlank { "" }),
+                PlantStatus = convertEmptyToNull(newBinding?.plantStatusAutoCompleteTextView?.text.toString()),
+                StatusNote = convertEmptyToNull(newBinding?.statusNoteEditText?.text.toString()),
                 Mother = if (newBinding?.motherSwitch?.isChecked == true) 1 else 0,
                 Website = if (newBinding?.websiteSwitch?.isChecked == true) 1 else 0,
                 Photo1 = convertEmptyToNull(photo1Path),
                 Photo2 = convertEmptyToNull(photo2Path),
                 Photo3 = convertEmptyToNull(photo3Path),
                 Photo4 = convertEmptyToNull(photo4Path),
-                AddedBy = null,
+                AddedBy = currentUserName,
                 LastEditedBy = null,
                 PlantedStart = dateFormat.format(today), // Set PlantedStart to today's date
                 PlantedEnd = dateFormat.format(threeWeeksLater), // Set PlantedEnd to three weeks later
-                PollinateDate = null,
-                SeedsPlanted = null,
-                SeedsHarvest = null,
-                TotalValue = null,
-                USD = null,
-                EUR = null,
+                PollinateDate = newBinding?.pollinateDateTextView?.text?.toString().takeIf { !it.isNullOrBlank() },
+                SeedsPlanted = newBinding?.seedsPlantedTextView?.text?.toString().takeIf { !it.isNullOrBlank() },
+                SeedsHarvest = newBinding?.seedsHarvestTextView?.text?.toString().takeIf { !it.isNullOrBlank() },
                 Weight = null,
                 Variegated = null,
                 PhotoLink1 = null,
@@ -311,20 +324,20 @@ object PlantSaveManager {
 
         Log.d("PlantSaveManager", if (isEditMode) "Updating existing plant: $plant" else "Saving new plant: $plant")
 
-        if (isEditMode) {
-            PlantRepository.updatePlant(plant)
-        } else {
+        if (!isEditMode) {
             PlantRepository.saveNewPlantLocally(context, plant)
+        } else {
+            PlantRepository.updatePlant(plant)
         }
 
         return plant
     }
 
-    private suspend fun syncWithDatabase(plant: Plant?, activity: AppCompatActivity, isEditMode: Boolean) {
+    private suspend fun syncWithDatabase(plant: Plant?, activity: AppCompatActivity) {
         plant?.let {
-            Log.d("PlantSaveManager", "syncWithDatabase isEditMode: $isEditMode")
+            Log.d("PlantSaveManager", "Syncing with the database")
 
-            Log.d("PlantSaveManager", if (isEditMode) "Updating unique entries in the database" else "Syncing new plant with the database")
+            // This can stay as is if it checks whether the plant has unique entries
             PlantRepository.updateUniqueEntries(
                 activity.applicationContext,
                 it.Family.toString(),
@@ -332,25 +345,29 @@ object PlantSaveManager {
                 it.Subspecies.toString()
             )
 
-            if (isEditMode) {
+            // Check inside the sync logic whether the plant is new or existing
+            if (it.StockID != null && it.StockID!! > 0) {
                 Log.d("PlantSaveManager", "Calling savePlantUpdate for existing plant")
                 PlantUpdateManager.savePlantUpdate(activity.applicationContext, it)
+                showToast(activity, "Plant changes saved")
+            } else {
+                showToast(activity, "New plant saved")
             }
 
-            showToast(activity, if (isEditMode) "Plant changes saved" else "New plant saved")
-
             val resultIntent = Intent().apply {
-                putExtra("updated", isEditMode)
+                putExtra("updated", it.StockID != null && it.StockID!! > 0) // check if it's updated or new
                 putExtra("plant", it)
             }
             activity.setResult(AppCompatActivity.RESULT_OK, resultIntent)
             activity.finish()
 
             val isConnected = PlantRepository.isMainDatabaseConnected.value ?: false
-            if (isConnected) {
-                showToast(activity, "Merging changes")
-            } else {
-                showToast(activity, "Connect to main database to merge changes")
+            withContext(Dispatchers.Main) {
+                if (isConnected) {
+                    showToast(activity, "Merging changes")
+                } else {
+                    showToast(activity, "Connect to main database to merge changes")
+                }
             }
 
             SyncManager.syncOnUserAction()
@@ -364,49 +381,79 @@ object PlantSaveManager {
         currentPlant: Plant?,
         lifecycleScope: LifecycleCoroutineScope,
         activity: AppCompatActivity,
-        isEditMode: Boolean
+        isEditMode: Boolean // Use the isEditMode passed as a parameter
     ) {
         Log.d("PlantSaveManager", "isEditMode: $isEditMode at the start of savePlantLocallyAndSync")
 
-        // Wait for photo upload only in edit mode
+        // If a photo is being uploaded and we are in edit mode, wait
         if (isEditMode && isPhotoUploading) {
-            showToast(activity, "Please wait until the photo is uploaded")
+            Log.e("PlantSaveManager", "Cannot proceed: Photo is still uploading in edit mode.")
+            lifecycleScope.launch(Dispatchers.Main) {
+                showToast(activity, "Please wait until the photo is uploaded")
+            }
             return
         }
 
+        Log.d("PlantSaveManager", "Proceeding to save plant. isEditMode=$isEditMode")
+
+        val plantBindingWrapper = when {
+            isEditMode && binding != null -> PlantValueCalculator.EditPlantBindingWrapper(binding)
+            !isEditMode && newBinding != null -> PlantValueCalculator.NewPlantBindingWrapper(newBinding)
+            else -> throw IllegalStateException("Binding is missing")
+        }
+
+        // Launch the save operation in the IO thread to handle heavy tasks in the background
         val job = lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Perform the local save first
-                val plant = performLocalSave(context, binding, newBinding, currentPlant, isEditMode)
+                withContext(Dispatchers.Main) {
+                    showToast(context, "Starting plant save process...")
+                }
 
-                // If in edit mode, update the UI immediately
+                // Recalculate values based on whether it's a new plant or editing an existing one
                 if (isEditMode) {
-                    withContext(Dispatchers.Main) {
-                        Log.d("PlantSaveManager", "Updating UI for an existing plant")
-                        (activity as? EditPlantActivity)?.updateUI(plant)
+                    binding?.let {
+                        PlantValueCalculator.recalculateValues(it, lifecycleScope, context)
+                    }
+                } else {
+                    newBinding?.let {
+                        PlantValueCalculator.recalculateValues(it, lifecycleScope, context)
                     }
                 }
 
-                // Sync with the main database and wait for the new StockID if adding a new plant
+                delay(1000) // Consider reducing or removing this delay if not necessary
+
+                // Perform local save (both new and existing plants)
+                val plant = performLocalSave(
+                    context = context,
+                    binding = binding,
+                    newBinding = newBinding,
+                    currentPlant = currentPlant,
+                    isEditMode = isEditMode,
+                    plantBindingWrapper = plantBindingWrapper
+                )
+
+                activity.finish()
+
+                // Sync with the main database for new plants
                 if (!isEditMode) {
                     Log.d("PlantSaveManager", "Syncing new plant with main database")
                     SyncManager.syncNewPlant(plant) { newStockID ->
-                        lifecycleScope.launch(Dispatchers.Main) {
-                            Log.d("PlantSaveManager", "Received new StockID: $newStockID")
-                            // Navigate to the Edit Plant screen with the new positive StockID
-                            navigateToEditPlantScreen(activity, newStockID)
-
-                            withContext(Dispatchers.IO) {
-                                uploadCachedPhotosWithBinding(newStockID, binding, newBinding, activity, lifecycleScope)
-                            }
+                        lifecycleScope.launch(Dispatchers.IO) {
+                            uploadCachedPhotosWithBinding(newStockID, binding, newBinding, activity, lifecycleScope)
                         }
                     }
                 } else {
-                    // For edit mode, perform the final sync with the database to ensure data consistency
+                    // Sync with the database for existing plants
                     Log.d("PlantSaveManager", "Final sync for an existing plant")
-                    syncWithDatabase(plant, activity, isEditMode)
+                    syncWithDatabase(plant, activity)
                 }
 
+            } catch (e: CancellationException) {
+                Log.e("PlantSaveManager", "Job was cancelled: ${e.message}", e)
+                Log.e("PlantSaveManager", "Job was cancelled. Coroutine context: ${lifecycleScope.coroutineContext}")
+                withContext(Dispatchers.Main) {
+                    showToast(activity, "Job was cancelled: ${e.message}")
+                }
             } catch (e: Exception) {
                 Log.e("PlantSaveManager", "Error saving plant: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -415,23 +462,31 @@ object PlantSaveManager {
             }
         }
 
-        // Log detailed information when the coroutine job completes
+        // Handle the job completion with better detail on cancellation or success
         job.invokeOnCompletion { throwable ->
             when (throwable) {
                 null -> {
                     Log.d("PlantSaveManager", "Job completed successfully.")
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        showToast(activity, "Plant save process completed.")
+                    }
                 }
                 is CancellationException -> {
-                    Log.e("PlantSaveManager", "Job was cancelled: ${throwable.message}")
-                    throwable.printStackTrace()
+                    Log.e("PlantSaveManager", "Job was cancelled: ${throwable.message}. Stack trace: ${Log.getStackTraceString(throwable)}")
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        showToast(activity, "Job was cancelled: ${throwable.message}")
+                    }
                 }
                 else -> {
-                    Log.e("PlantSaveManager", "Job failed with exception: ${throwable.message}")
-                    throwable.printStackTrace()
+                    Log.e("PlantSaveManager", "Job failed with exception: ${throwable.message}. Stack trace: ${Log.getStackTraceString(throwable)}")
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        showToast(activity, "Job failed with exception: ${throwable.message}")
+                    }
                 }
             }
         }
     }
+
 
     private fun navigateToEditPlantScreen(activity: AppCompatActivity, stockID: Int) {
         Log.d("PlantSaveManager", "Navigating to Edit Plant screen with StockID: $stockID")
@@ -466,12 +521,25 @@ object PlantSaveManager {
     }
 
     private fun generateTempStockID(): Int {
-        return -(1..Int.MAX_VALUE).random()
-    }
+        var tempStockID: Int
+        val stockIDList = PlantRepository.getAllStockIDs() // Retrieve all existing StockIDs
 
-    private fun showToast(activity: AppCompatActivity, message: String) {
-        activity.runOnUiThread {
-            android.widget.Toast.makeText(activity, message, android.widget.Toast.LENGTH_SHORT).show()
+        if (stockIDList.isEmpty()) {
+            Log.d("StockIDGeneration", "No existing StockIDs found in local database (possibly a fresh install).")
+        } else {
+            Log.d("StockIDGeneration", "Existing StockIDs: $stockIDList")
         }
+
+        var attempts = 0 // Count how many attempts it takes to generate a unique StockID
+
+        do {
+            tempStockID = -(1..Int.MAX_VALUE).random() // Generate a negative StockID
+            attempts++
+            Log.d("StockIDGeneration", "Attempt $attempts: Generated Temp StockID: $tempStockID")
+        } while (stockIDList.contains(tempStockID)) // Check if it already exists in the local database
+
+        Log.d("StockIDGeneration", "Unique Temp StockID generated after $attempts attempt(s): $tempStockID")
+
+        return tempStockID
     }
 }

@@ -7,6 +7,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,7 +15,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material3.MaterialTheme
 import com.example.rrhe.ui.theme.RRHETheme
 
 class StatsScreen : ComponentActivity() {
@@ -52,6 +52,7 @@ fun StatsScreenComposable(viewModel: StatsViewModel = viewModel(), inactivityDet
         val stats by viewModel.stats.collectAsState()
 
         // Get the colors from the theme
+        val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
         val textColor = MaterialTheme.colorScheme.onBackground.toArgb()
 
         LaunchedEffect(Unit) {
@@ -62,6 +63,9 @@ fun StatsScreenComposable(viewModel: StatsViewModel = viewModel(), inactivityDet
             val parent = FrameLayout(context)
             LayoutInflater.from(context).inflate(R.layout.screen_stats, parent, false)
         }, update = { view ->
+            // Set background color for the parent layout
+            view.setBackgroundColor(backgroundColor)
+
             stats?.let {
                 view.findViewById<TextView>(R.id.statsTitle).apply {
                     text = context.getString(R.string.stats)

@@ -13,6 +13,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
@@ -71,29 +72,39 @@ object PhotoManager {
         scope: CoroutineScope
     ) {
         val uri = Uri.parse(photoPath)
-        currentPlant?.let {
-            updateImageViewWithGlide(uri.toString(), binding, photoIndex, activity)
 
-            scope.launch(Dispatchers.IO) {
-                val resizedPhotoPath = resizePhoto(uri, activity)
-                if (resizedPhotoPath != null) {
-                    val resizedUri = Uri.fromFile(File(resizedPhotoPath))
-                    withContext(Dispatchers.Main) {
-                        updateImageViewWithGlide(resizedUri.toString(), binding, photoIndex, activity)
-                    }
-                    // For NewPlantActivity, do not upload immediately
-                    if (activity is NewPlantActivity && currentPlant.StockID != null && currentPlant.StockID!! < 0) {
-                        // Store in tempFiles for later upload
-                        tempFiles.add(File(resizedPhotoPath))
-                    } else {
-                        handlePhotoUpload(resizedUri, activity, currentPlant.StockID ?: 0, photoIndex, binding, activity, scope)
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        showToast(activity, "Failed to resize and process the photo.")
-                    }
+        // Update the ImageView with the photo and cache it
+        updateImageViewWithGlide(uri.toString(), binding, photoIndex, activity)
+
+        scope.launch(Dispatchers.IO) {
+            // Commented out resizing logic for now, while keeping the rest intact
+            /*
+            val resizedPhotoPath = resizePhoto(uri, activity)
+            if (resizedPhotoPath != null) {
+                val resizedUri = Uri.fromFile(File(resizedPhotoPath))
+                withContext(Dispatchers.Main) {
+                    updateImageViewWithGlide(resizedUri.toString(), binding, photoIndex, activity)
+                }
+
+                // Upload the photo immediately for both Edit and New Plant activities
+                handlePhotoUpload(resizedUri, activity, currentPlant?.StockID ?: -1, photoIndex, binding, activity, scope)
+
+                // Store in tempFiles for New Plant Activity to reference later
+                if (activity is NewPlantActivity && currentPlant?.StockID != null && currentPlant.StockID < 0) {
+                    tempFiles.add(File(resizedPhotoPath))
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    showToast(activity, "Failed to resize and process the photo.")
                 }
             }
+            */
+
+            // Directly upload the photo without resizing
+            handlePhotoUpload(uri, activity, currentPlant?.StockID ?: -1, photoIndex, binding, activity, scope)
+
+            // No need for special handling of negative StockID
+            // Photos are uploaded directly, regardless of StockID value
         }
     }
 
@@ -191,7 +202,7 @@ object PhotoManager {
     private fun handlePhotoUpload(
         photoUri: Uri,
         context: Context,
-        stockID: Int,
+        stockID: Int,  // Whether negative or positive, stockID is used as is
         photoIndex: Int,
         binding: PlantBinding,
         activity: AppCompatActivity,
@@ -207,11 +218,14 @@ object PhotoManager {
 
             withContext(Dispatchers.Main) {
                 if (photoPath != null) {
+                    // Update the ImageView with the uploaded photo
                     updateImageViewWithGlide(photoPath, binding, photoIndex, activity)
                     showToast(activity, "Photo uploaded successfully")
                 } else {
                     showToast(activity, "Failed to upload photo")
                 }
+
+                // Enable the save button after the photo upload process is complete
                 PlantSaveManager.isPhotoUploading = false
                 binding.saveButton.isEnabled = true
             }
@@ -401,7 +415,7 @@ object PhotoManager {
         Glide.get(context).clearMemory() // Clear memory cache immediately on the main thread
     }
 
-    fun refreshPhotos(
+    private fun refreshPhotos(
         stockID: Int,
         context: Context,
         binding: Any, // Use Any to handle both binding types
@@ -456,12 +470,23 @@ object PhotoManager {
     }
 
     private fun updateImageViewWithGlide(photoPath: String, binding: PlantBinding, photoIndex: Int, context: Context) {
-        when (photoIndex) {
-            1 -> loadImageWithRetry(photoPath, binding.photoEdit1, context)
-            2 -> loadImageWithRetry(photoPath, binding.photoEdit2, context)
-            3 -> loadImageWithRetry(photoPath, binding.photoEdit3, context)
-            4 -> loadImageWithRetry(photoPath, binding.photoEdit4, context)
-        }
+        Log.d("PhotoManager", "Loading image into ImageView for photoIndex: $photoIndex, photoPath: $photoPath")
+
+        Glide.with(context)
+            .load(photoPath)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)  // Ensure Glide uses disk and memory cache
+            .skipMemoryCache(false)                    // Make sure memory cache is not skipped
+            .placeholder(R.drawable.loading_placeholder)
+            .error(R.drawable.error_image)
+            .into(
+                when (photoIndex) {
+                    1 -> binding.photoEdit1
+                    2 -> binding.photoEdit2
+                    3 -> binding.photoEdit3
+                    4 -> binding.photoEdit4
+                    else -> throw IllegalArgumentException("Invalid photoIndex: $photoIndex")
+                }
+            )
     }
 
     fun onRequestPermissionsResult(
@@ -478,9 +503,5 @@ object PhotoManager {
                 showToast(context, "Camera permission is required to take photos")
             }
         }
-    }
-
-    private fun showToast(context: Context, message: String) {
-        android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
     }
 }

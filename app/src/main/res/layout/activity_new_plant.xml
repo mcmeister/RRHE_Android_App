@@ -379,7 +379,7 @@
                     android:importantForAutofill="no"
                     android:background="?android:attr/selectableItemBackground"
                     android:padding="12dp"
-                    android:text="@string/select_date"
+                    android:hint="@string/select_date"
                     android:maxWidth="488dp"
                     android:minHeight="48dp" />
 
@@ -395,7 +395,7 @@
                     android:importantForAutofill="no"
                     android:background="?android:attr/selectableItemBackground"
                     android:padding="12dp"
-                    android:text="@string/select_date"
+                    android:hint="@string/select_date"
                     android:maxWidth="488dp"
                     android:minHeight="48dp" />
 
@@ -411,7 +411,7 @@
                     android:importantForAutofill="no"
                     android:background="?android:attr/selectableItemBackground"
                     android:padding="12dp"
-                    android:text="@string/select_date"
+                    android:hint="@string/select_date"
                     android:maxWidth="488dp"
                     android:minHeight="48dp" />
 
@@ -474,7 +474,7 @@
 
                 <View
                     android:layout_width="match_parent"
-                    android:layout_height="56dp" />
+                    android:layout_height="60dp" />
             </LinearLayout>
         </ScrollView>
 

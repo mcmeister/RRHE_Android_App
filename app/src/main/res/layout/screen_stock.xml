@@ -15,6 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:background="@android:color/white"
             android:visibility="gone">
 
             <EditText
@@ -23,6 +24,7 @@
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:importantForAutofill="no"
+                android:background="@android:color/white"
                 tools:ignore="LabelFor,TextFields" />
 
             <ImageView
@@ -68,7 +70,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:importantForAccessibility="no"
-                android:src="@drawable/ic_search" />
+                android:src="@drawable/ic_search"
+                android:background="@android:color/white"/>
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView

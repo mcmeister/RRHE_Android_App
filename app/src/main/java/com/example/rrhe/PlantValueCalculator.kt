@@ -113,9 +113,11 @@ object PlantValueCalculator {
     }
 
     // Wrapper interface to abstract common binding functions
-    private interface PlantBindingWrapper {
+    interface PlantBindingWrapper {
         fun getStockPrice(): String
         fun getStockQty(): String
+        fun getUSD(): String
+        fun getEUR(): String
         fun setTotalValue(value: String)
         fun setUSD(value: String)
         fun setEUR(value: String)
@@ -127,9 +129,11 @@ object PlantValueCalculator {
     }
 
     // Wrapper for EditPlantBinding
-    private class EditPlantBindingWrapper(private val binding: ActivityEditPlantBinding) : PlantBindingWrapper {
+    class EditPlantBindingWrapper(private val binding: ActivityEditPlantBinding) : PlantBindingWrapper {
         override fun getStockPrice() = binding.stockPriceEditText.text.toString()
         override fun getStockQty() = binding.stockQtyEditText.text.toString()
+        override fun getUSD() = binding.usdEditText.text.toString()
+        override fun getEUR() = binding.eurEditText.text.toString()
         override fun setTotalValue(value: String) {
             binding.totalValueEditText.text = value
         }
@@ -154,6 +158,8 @@ object PlantValueCalculator {
     class NewPlantBindingWrapper(private val binding: ActivityNewPlantBinding) : PlantBindingWrapper {
         override fun getStockPrice() = binding.stockPriceEditText.text.toString()
         override fun getStockQty() = binding.stockQtyEditText.text.toString()
+        override fun getUSD() = binding.usdEditText.text.toString()
+        override fun getEUR() = binding.eurEditText.text.toString()
         override fun setTotalValue(value: String) {
             binding.totalValueEditText.text = value
         }

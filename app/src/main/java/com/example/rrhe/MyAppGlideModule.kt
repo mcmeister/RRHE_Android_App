@@ -18,10 +18,10 @@ class MyAppGlideModule : AppGlideModule() {
 
     override fun applyOptions(context: Context, builder: GlideBuilder) {
         val requestOptions = RequestOptions()
-            .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
-            .skipMemoryCache(false)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)  // Cache both in memory and disk
+            .skipMemoryCache(false)                    // Ensure memory cache is used
             .timeout(30000)
-            .placeholder(R.drawable.loading_placeholder)
+            .placeholder(R.drawable.loading_placeholder)  // Use placeholders cautiously
             .error(R.drawable.error_image)
 
         builder.setDefaultRequestOptions(requestOptions)

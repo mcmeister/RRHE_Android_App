@@ -1,5 +1,6 @@
 package com.example.rrhe
 
+import android.util.Log
 import com.google.gson.GsonBuilder
 import okhttp3.ConnectionPool
 import okhttp3.JavaNetCookieJar
@@ -29,19 +30,22 @@ object ApiClient {
             .writeTimeout(30, TimeUnit.SECONDS)
 
         val logging = HttpLoggingInterceptor().apply {
-            // You can adjust this to HttpLoggingInterceptor.Level.BODY for more detailed logs
-            level = HttpLoggingInterceptor.Level.BASIC
+            level = HttpLoggingInterceptor.Level.BASIC // You can set this to BODY for more details
         }
         okHttpClientBuilder.addInterceptor(logging)
         okHttpClientBuilder.addInterceptor { chain ->
             val request = chain.request().newBuilder()
                 .addHeader("Accept-Encoding", "identity")
-                // Removed Connection: close header to allow connection reuse
                 .build()
-            chain.proceed(request)
+
+            Log.d("ApiClient", "Base URL: $baseUrl")
+
+            val response = chain.proceed(request)
+
+            response
         }
         okHttpClientBuilder.addInterceptor(RetryInterceptor())
-        okHttpClientBuilder.connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))  // Increased connection pool timeout
+        okHttpClientBuilder.connectionPool(ConnectionPool(5, 5, TimeUnit.MINUTES))
 
         okHttpClient = okHttpClientBuilder.build()
 
@@ -78,13 +82,16 @@ object ApiClient {
     }
 
     private fun isEmulator(): Boolean {
-        return (android.os.Build.FINGERPRINT.startsWith("generic")
-                || android.os.Build.FINGERPRINT.startsWith("unknown")
+        val result = (android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.contains("sdk_gphone")
                 || android.os.Build.MODEL.contains("google_sdk")
                 || android.os.Build.MODEL.contains("Emulator")
                 || android.os.Build.MODEL.contains("Android SDK built for x86")
+                || android.os.Build.MODEL.contains("sdk_gphone")
                 || android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic")
-                || "google_sdk" == android.os.Build.PRODUCT)
+                || android.os.Build.PRODUCT.contains("sdk_gphone"))
+        Log.d("ApiClient", "Is emulator: $result")
+        return result
     }
 
     // Static method for use in MyFirebaseMessagingService
@@ -110,6 +117,8 @@ class RetryInterceptor : okhttp3.Interceptor {
 
         while (attempts < maxRetries) {
             try {
+                Log.d("RetryInterceptor", "Attempting request, attempt: $attempts")
+
                 response = chain.proceed(request)
                 if (response.isSuccessful) {
                     return response
@@ -117,6 +126,7 @@ class RetryInterceptor : okhttp3.Interceptor {
                     response.close()
                 }
             } catch (e: Exception) {
+                Log.e("RetryInterceptor", "Request failed with exception: ${e.message}")
                 if (attempts >= maxRetries - 1) {
                     response?.close()
                     throw e

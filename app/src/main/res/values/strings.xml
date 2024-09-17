@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <string name="app_name">RRHE</string>
+    <string name="app_name">Amazon Garden</string>
     <string name="plant_image">Plant Image</string>
     <string name="plant_name">Plant Name</string>
     <string name="plant_stock">Plant Stock</string>

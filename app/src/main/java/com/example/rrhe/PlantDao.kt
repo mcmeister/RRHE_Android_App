@@ -56,4 +56,7 @@ interface PlantDao {
 
     @Query("SELECT * FROM plants WHERE PlantedEnd = :todayDate")
     fun getPlantsReadyForNotification(todayDate: String?): List<Plant?>?
+
+    @Query("SELECT StockID FROM plants WHERE StockID < 0")
+    fun getAllStockIDs(): List<Int>
 }

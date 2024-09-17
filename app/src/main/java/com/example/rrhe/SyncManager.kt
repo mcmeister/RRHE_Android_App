@@ -29,6 +29,9 @@ object SyncManager {
                 if (currentTime - lastConnectionCheckTime > CONNECTION_CHECK_INTERVAL) {
                     if (!DatabaseConnectionManager.checkMainDatabaseConnection()) {
                         if (!connectionMessageLogged) {
+                            withContext(Dispatchers.Main) {
+                                showToast(MyApplication.instance, "No connection to main database; skipping sync")
+                            }
                             Log.e("SyncManager", "No connection to main database; skipping sync")
                             connectionMessageLogged = true
                         }
@@ -38,6 +41,9 @@ object SyncManager {
                     lastConnectionCheckTime = currentTime
                 } else if (PlantRepository.isMainDatabaseConnected.value != true) {
                     if (!connectionMessageLogged) {
+                        withContext(Dispatchers.Main) {
+                            showToast(MyApplication.instance, "No connection to main database; skipping sync")
+                        }
                         Log.e("SyncManager", "No connection to main database; skipping sync")
                         connectionMessageLogged = true
                     }
@@ -46,6 +52,9 @@ object SyncManager {
                 }
 
                 Log.d("SyncManager", "Connected to main database successfully.")
+                withContext(Dispatchers.Main) {
+                    showToast(MyApplication.instance, "Connected to main database")
+                }
                 connectionMessageLogged = false // Reset message log status on successful connection
 
                 val successfullySynced = mutableListOf<PlantUpdateRequest>()
@@ -54,6 +63,10 @@ object SyncManager {
                     val updateResponse = try {
                         ApiClient.apiService.updatePlant(updateRequest)
                     } catch (e: HttpException) {
+                        withContext(Dispatchers.Main) {
+                            showToast(MyApplication.instance, "Sync failed for plant ID: ${updateRequest.StockID}")
+                        }
+                        Log.e("SyncManager", "Sync failed for plant ID: ${updateRequest.StockID}, exception: ${e.message}")
                         null
                     }
 
@@ -70,6 +83,9 @@ object SyncManager {
                 val changes = try {
                     fetchRRHEChangesWithRetry()
                 } catch (e: HttpException) {
+                    withContext(Dispatchers.Main) {
+                        showToast(MyApplication.instance, "Fetching changes failed: ${e.message}")
+                    }
                     Log.e("SyncManager", "Fetching changes failed with exception: ${e.message}")
                     null
                 }
@@ -107,37 +123,56 @@ object SyncManager {
 
     suspend fun syncNewPlant(newPlant: Plant, onStockIDFetched: (Int) -> Unit) {
         val job = SupervisorJob()
-        withContext(Dispatchers.IO + job) {
-            try {
-                // Step 1: Insert the new plant into the main database
-                val insertResponse = ApiClient.apiService.insertNewPlant(newPlant)
-
-                insertResponse.let { response ->
-                    Log.d("SyncManager", "INSERT to main database successful with new StockID: ${response.StockID}")
-
-                    // Step 2: Fetch the newly inserted plant from the main database (ensure it has correct StockID)
-                    val fetchedPlant = PlantRepository.getPlantByStockID(response.StockID!!)
-
-                    fetchedPlant?.let {
-                        // Step 3: Save the fetched plant with correct StockID to the local database
-                        PlantRepository.saveNewPlantLocally(MyApplication.instance, it)
-
-                        // Step 4: Delete the plant with the temporary StockID
-                        PlantRepository.deletePlantByStockID(newPlant.StockID!!)
-
-                        // Notify the UI with the new StockID
-                        onStockIDFetched(response.StockID!!)
-
-                        // Log the successful update
-                        Log.d("SyncManager", "Successfully updated local database with new plant: $fetchedPlant")
+        try {
+            withContext(Dispatchers.IO + job) {
+                try {
+                    // Notify user of start of sync process
+                    withContext(Dispatchers.Main) {
+                        Log.d("SyncManager", "Starting to sync new plant...")
+                        showToast(MyApplication.instance, "Starting to sync new plant...")
                     }
 
-                    // Step 5: Refresh the local plant list to ensure it's up to date with the main database
-                    refreshLocalPlantList()
+                    // Step 1: Insert the new plant into the main database
+                    val insertResponse = try {
+                        ApiClient.apiService.insertNewPlant(newPlant)
+                    } catch (e: Exception) {
+                        Log.e("SyncManager", "Error during INSERT new plant sync: ${e.message}", e)
+                        withContext(Dispatchers.Main) {
+                            showToast(MyApplication.instance, "Error inserting new plant: ${e.message}")
+                        }
+                        throw e
+                    }
+
+                    insertResponse.let { response ->
+                        Log.d("SyncManager", "INSERT to main database successful with new StockID: ${response.StockID}")
+                        withContext(Dispatchers.Main) {
+                            showToast(MyApplication.instance, "Successfully inserted plant to main database.")
+                        }
+
+                        // Fetch newly inserted plant from the main database
+                        val fetchedPlant = PlantRepository.getPlantByStockID(response.StockID!!)
+                        fetchedPlant?.let {
+                            PlantRepository.saveNewPlantLocally(MyApplication.instance, it)
+                            PlantRepository.deletePlantByStockID(newPlant.StockID!!)
+                            onStockIDFetched(response.StockID!!)
+                            Log.d("SyncManager", "Successfully updated local database with new plant: $fetchedPlant")
+                        }
+
+                        refreshLocalPlantList()
+
+                        withContext(Dispatchers.Main) {
+                            showToast(MyApplication.instance, "Local plant list refreshed.")
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("SyncManager", "Error during INSERT new plant sync: ${e.message}", e)
+                    withContext(Dispatchers.Main) {
+                        showToast(MyApplication.instance, "Error syncing new plant: ${e.message}")
+                    }
                 }
-            } catch (e: Exception) {
-                Log.e("SyncManager", "Error during INSERT new plant sync: ${e.message}", e)
             }
+        } catch (e: Exception) {
+            Log.e("SyncManager", "Top-level error during syncNewPlant: ${e.message}", e)
         }
     }
 

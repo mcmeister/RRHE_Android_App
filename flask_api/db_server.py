@@ -14,10 +14,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 def get_db_connection():
     return pymysql.connect(
-        host='localhost',
+        host='0.0.0.0',
         user='root',
         password='online12',
-        database='rrhe_db_dev',
+        database='rrhe_db',
         charset='utf8mb4',
         use_unicode=True
     )
@@ -220,7 +220,7 @@ def update_rrhe():
                 SET Family=%s, Species=%s, Subspecies=%s, NameConcat=%s, StockQty=%s, StockPrice=%s, PurchasePrice=%s, PlantDescription=%s, ThaiName=%s, 
                     M_ID=%s, F_ID=%s, PlantStatus=%s, StatusNote=%s, Mother=%s, Website=%s, TableName=%s, TraySize=%s, Grams=%s, 
                     TotalValue=%s, USD=%s, EUR=%s, PlantedStart=%s, PlantedEnd=%s, PollinateDate=%s, SeedsPlanted=%s, SeedsHarvest=%s,
-                    PhotoLink1=%s, PhotoLink2=%s, PhotoLink3=%s, PhotoLink4=%s, Stamp=%s
+                    PhotoLink1=%s, PhotoLink2=%s, PhotoLink3=%s, PhotoLink4=%s, LastEditedBy=%s, AddedBy=%s, Stamp=%s
                 WHERE StockID=%s
             """, (data.get('Family'), data.get('Species'), data.get('Subspecies'), data.get('NameConcat'),
                   data.get('StockQty'), data.get('StockPrice'), data.get('PurchasePrice'), data.get('PlantDescription'),
@@ -228,7 +228,7 @@ def update_rrhe():
                   data.get('Mother'), data.get('Website'), data.get('TableName'), data.get('TraySize'), data.get('Grams'),
                   data.get('TotalValue'), data.get('USD'), data.get('EUR'), data.get('PlantedStart'), data.get('PlantedEnd'),
                   data.get('PollinateDate'), data.get('SeedsPlanted'), data.get('SeedsHarvest'), data.get('PhotoLink1'),
-                  data.get('PhotoLink2'), data.get('PhotoLink3'), data.get('PhotoLink4'), incoming_stamp, stock_id))
+                  data.get('PhotoLink2'), data.get('PhotoLink3'), data.get('PhotoLink4'), data.get('LastEditedBy'), data.get('AddedBy'), incoming_stamp, stock_id))
 
             connection.commit()
             app.logger.debug(f"Plant updated successfully for StockID: {stock_id}")

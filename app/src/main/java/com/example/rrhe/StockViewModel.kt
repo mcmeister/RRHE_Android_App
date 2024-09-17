@@ -1,16 +1,17 @@
 package com.example.rrhe
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.rrhe.PlantRepository.plantDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class StockViewModel : ViewModel() {
+class StockViewModel(application: Application) : AndroidViewModel(application) {
+
     private val _plants = MutableStateFlow<List<Plant>>(emptyList())
     val plants: StateFlow<List<Plant>> = _plants
 
@@ -22,6 +23,9 @@ class StockViewModel : ViewModel() {
 
     init {
         loadPlants()
+
+        // Trigger sync with the main database right after loading local plants
+        syncWithMainDatabase()
     }
 
     private fun loadPlants() {
@@ -45,7 +49,7 @@ class StockViewModel : ViewModel() {
                         performSearch(searchQuery.value, filterMother.value, filterWebsite.value)
                         if (!initialToastShown) {
                             showToast(
-                                MyApplication.instance,
+                                getApplication<Application>().applicationContext,
                                 "Plant list loaded locally"
                             )
                             initialToastShown = true
@@ -56,19 +60,19 @@ class StockViewModel : ViewModel() {
                 // Show "Working with local database" message only once
                 withContext(Dispatchers.Main) {
                     if (!initialToastShown) {
-                        showToast(MyApplication.instance, "Working with local database")
+                        showToast(getApplication<Application>().applicationContext, "Working with local database")
                         initialToastShown = true
                     }
                 }
 
                 // Check and fetch initial data from the remote server
-                PlantRepository.checkAndFetchInitialData(MyApplication.instance.applicationContext)
+                PlantRepository.checkAndFetchInitialData(getApplication<Application>().applicationContext)
 
                 // Wait until the main database connection is established
                 withContext(Dispatchers.Main) {
                     PlantRepository.isMainDatabaseConnected.observeForever { isConnected ->
                         if (isConnected && !connectionToastShown) {
-                            showToast(MyApplication.instance, "Connected to main database")
+                            showToast(getApplication<Application>().applicationContext, "Connected to main database")
                             connectionToastShown = true
                         }
                     }
@@ -90,16 +94,16 @@ class StockViewModel : ViewModel() {
         _plants.value = if (query.isEmpty() && !filterMother && !filterWebsite) {
             PlantRepository.plants.value?.filter { it.StockID!! > 0 }?.sortedByDescending { it.StockID } ?: emptyList()
         } else {
-            val lowercaseQuery = query.lowercase()
             PlantRepository.plants.value?.filter {
                 val matchesQuery = query.isEmpty() ||
                         it.StockID.toString() == query ||
-                        it.Family?.contains(lowercaseQuery, ignoreCase = true) == true ||
-                        it.Species?.contains(lowercaseQuery, ignoreCase = true) == true ||
-                        it.Subspecies?.contains(lowercaseQuery, ignoreCase = true) == true ||
-                        it.StockQty.toString().contains(lowercaseQuery) ||
-                        it.StockPrice.toString().contains(lowercaseQuery) ||
-                        it.AddedBy?.contains(lowercaseQuery, ignoreCase = true) == true
+                        it.Family?.contains(query, ignoreCase = true) == true ||
+                        it.Species?.contains(query, ignoreCase = true) == true ||
+                        it.Subspecies?.contains(query, ignoreCase = true) == true ||
+                        it.StockQty.toString().contains(query) ||
+                        it.StockPrice.toString().contains(query) ||
+                        it.AddedBy?.contains(query, ignoreCase = true) == true ||
+                        it.PlantedEnd == query
 
                 val matchesMother = !filterMother || it.Mother == 1
                 val matchesWebsite = !filterWebsite || it.Website == 1
@@ -112,7 +116,7 @@ class StockViewModel : ViewModel() {
         _plants.value = plants.filter { it.StockID!! > 0 }.sortedByDescending { it.StockID }
     }
 
-    fun syncWithMainDatabase() {
+    private fun syncWithMainDatabase() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 SyncManager.syncOnUserAction()
@@ -137,7 +141,7 @@ class StockViewModel : ViewModel() {
     private suspend fun refreshPlantList() {
         withContext(Dispatchers.IO) {
             try {
-                val refreshedPlants = plantDao.getAllPlants()
+                val refreshedPlants = PlantRepository.plantDao.getAllPlants()
                     .filter { it.StockID!! > 0 }
                     .sortedByDescending { it.StockID }
                 withContext(Dispatchers.Main) {
