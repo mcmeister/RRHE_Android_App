@@ -132,17 +132,29 @@ object PlantValueCalculator {
     class EditPlantBindingWrapper(private val binding: ActivityEditPlantBinding) : PlantBindingWrapper {
         override fun getStockPrice() = binding.stockPriceEditText.text.toString()
         override fun getStockQty() = binding.stockQtyEditText.text.toString()
-        override fun getUSD() = binding.usdEditText.text.toString()
-        override fun getEUR() = binding.eurEditText.text.toString()
+
+        override fun getUSD(): String {
+            val usdValue = binding.usdEditText.text.toString().replace(Regex("\\D"), "")
+            return usdValue
+        }
+
+        override fun getEUR(): String {
+            val eurValue = binding.eurEditText.text.toString().replace(Regex("\\D"), "")
+            return eurValue
+        }
+
         override fun setTotalValue(value: String) {
             binding.totalValueEditText.text = value
         }
+
         override fun setUSD(value: String) {
             binding.usdEditText.text = value
         }
+
         override fun setEUR(value: String) {
             binding.eurEditText.text = value
         }
+
         override fun getFamily() = binding.familyAutoCompleteTextView.text.toString()
         override fun getSpecies() = binding.speciesAutoCompleteTextView.text.toString()
         override fun getSubspecies() = binding.subspeciesAutoCompleteTextView.text.toString()
@@ -164,10 +176,10 @@ object PlantValueCalculator {
             binding.totalValueEditText.text = value
         }
         override fun setUSD(value: String) {
-            binding.usdEditText.text = value
+            binding.usdEditText.text = value  // Ensure we set the value to the EditText
         }
         override fun setEUR(value: String) {
-            binding.eurEditText.text = value
+            binding.eurEditText.text = value  // Ensure we set the value to the EditText
         }
         override fun getFamily() = binding.familyAutoCompleteTextView.text.toString()
         override fun getSpecies() = binding.speciesAutoCompleteTextView.text.toString()

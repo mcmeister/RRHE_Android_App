@@ -1,6 +1,9 @@
 package com.example.rrhe
 
+import android.util.Log
+import android.widget.ArrayAdapter
 import android.widget.ImageView
+import android.widget.Spinner
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
@@ -40,6 +43,10 @@ object PlantUIUpdater {
         binding.plantDescriptionEditText.setText(plant.PlantDescription)
         binding.thaiNameText.text = plant.ThaiName?.let { decodeUnicode(it) }
 
+        // Explicitly set letter and number spinners
+        setSpinnerSelection(binding.letterSpinner, plant.TableName?.substring(0, 1))
+        setSpinnerSelection(binding.numberSpinner, plant.TableName?.substring(1))
+
         // ID dropdowns
         setIDDropdowns(binding, plant)
 
@@ -53,6 +60,29 @@ object PlantUIUpdater {
 
         // Only update photo views and not the date fields
         updatePhotoViews(binding, plant)
+    }
+
+    private fun setSpinnerSelection(spinner: Spinner, value: String?) {
+        if (value != null) {
+            val adapter = spinner.adapter
+
+            // Safely check if the adapter is an instance of ArrayAdapter<*>
+            if (adapter is ArrayAdapter<*>) {
+                @Suppress("UNCHECKED_CAST")
+                val stringAdapter = adapter as ArrayAdapter<String>
+                val position = stringAdapter.getPosition(value)
+                if (position >= 0) {
+                    Log.d("setSpinnerSelection", "Setting spinner selection to position: $position for value: $value")
+                    spinner.setSelection(position)
+                } else {
+                    Log.e("setSpinnerSelection", "Value '$value' not found in spinner adapter.")
+                }
+            } else {
+                Log.e("setSpinnerSelection", "Spinner adapter is not an instance of ArrayAdapter<String>.")
+            }
+        } else {
+            Log.e("setSpinnerSelection", "Value is null, cannot set spinner selection.")
+        }
     }
 
     // Update UI elements specifically for NewPlantActivity

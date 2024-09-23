@@ -8,6 +8,7 @@ from datetime import datetime
 import re
 import logging
 import hashlib
+import os
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -252,15 +253,20 @@ def handle_value(value):
 def insert_new_plant():
     data = request.json
     app.logger.debug(f"Received insert request: {data}")
+    
     if not data:
         return jsonify({'error': 'No input data provided'}), 400
+
+    temp_stock_id = data.get('StockID')  # Use StockID as temp_stock_id if it's negative
+    if temp_stock_id is None or temp_stock_id >= 0:
+        return jsonify({'error': 'Invalid or missing negative StockID'}), 400
 
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
             # Start the transaction
             cursor.execute("BEGIN;")
-            
+
             # Lock the table by selecting MAX(StockID) with FOR UPDATE to prevent concurrent inserts
             cursor.execute("SELECT MAX(StockID) FROM stock FOR UPDATE;")
             max_stock_id = cursor.fetchone()[0]
@@ -295,10 +301,7 @@ def insert_new_plant():
                 data.get('TotalValue'),
                 data.get('USD'),
                 data.get('EUR'),
-                data.get('Photo1'),
-                data.get('Photo2'),
-                data.get('Photo3'),
-                data.get('Photo4'),
+                None, None, None, None,  # Photo columns will be updated after renaming
                 data.get('PhotoLink1'),
                 data.get('PhotoLink2'),
                 data.get('PhotoLink3'),
@@ -324,11 +327,50 @@ def insert_new_plant():
                     PhotoLink1, PhotoLink2, PhotoLink3, PhotoLink4, AddedBy, LastEditedBy, Weight, Grams, TraySize, TrayQty, Variegated, Stamp
                 ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """
-
             cursor.execute(insert_query, values)
             connection.commit()  # Commit the transaction
 
             app.logger.debug(f"New plant inserted successfully with StockID: {new_stock_id}")
+
+            # Renaming the photo files from tempStockID (negative StockID) to {new_stock_id}
+            photo_folder = "/home/mcmeister/Documents/GDrive_Photos/"
+            photos_to_rename = {
+                'Photo1': f"{temp_stock_id}_1.jpg",
+                'Photo2': f"{temp_stock_id}_2.jpg",
+                'Photo3': f"{temp_stock_id}_3.jpg",
+                'Photo4': f"{temp_stock_id}_4.jpg"
+            }
+
+            updated_photo_urls = {}
+
+            for photo_column, old_filename in photos_to_rename.items():
+                new_filename = f"{new_stock_id}_{old_filename.split('_')[1]}"
+                old_filepath = os.path.join(photo_folder, old_filename)
+                new_filepath = os.path.join(photo_folder, new_filename)
+
+                if os.path.exists(old_filepath):
+                    os.rename(old_filepath, new_filepath)
+                    updated_photo_urls[photo_column] = f"http://183.88.230.187:55004/{new_stock_id}_{old_filename.split('_')[1]}"
+                    app.logger.debug(f"Renamed {old_filepath} to {new_filepath}")
+                else:
+                    app.logger.warning(f"File {old_filepath} does not exist, skipping renaming.")
+
+            # Update the photo columns in the database for the newly inserted plant
+            update_photos_query = """
+                UPDATE stock
+                SET Photo1 = %s, Photo2 = %s, Photo3 = %s, Photo4 = %s
+                WHERE StockID = %s
+            """
+            cursor.execute(update_photos_query, (
+                updated_photo_urls.get('Photo1'),
+                updated_photo_urls.get('Photo2'),
+                updated_photo_urls.get('Photo3'),
+                updated_photo_urls.get('Photo4'),
+                new_stock_id
+            ))
+
+            connection.commit()
+            app.logger.debug(f"Photo columns updated for StockID: {new_stock_id}")
 
             # Fetch the inserted plant's data to return
             cursor.execute("SELECT * FROM stock WHERE StockID = %s", (new_stock_id,))

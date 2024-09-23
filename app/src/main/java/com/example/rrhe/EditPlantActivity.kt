@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.ImageView
@@ -52,6 +53,8 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
     private var isPlantSaved = false
 
+    private var imagesLoaded = false
+
     override val photoEdit1: ImageView
         get() = binding.photoEdit1
     override val photoEdit2: ImageView
@@ -77,20 +80,32 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         get() = binding.fIdAutoCompleteTextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Log.d("EditPlantActivity", "onCreate called")
         super.onCreate(savedInstanceState)
+
         binding = ActivityEditPlantBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Adjust the label colors for dark mode using a helper method
         adjustLabelColors()
 
         currentPlant = getPlantFromIntent()
 
+        // Log plant details for debugging
+        Log.d("EditPlantActivity", "Current plant: ${currentPlant?.TableName ?: "No plant data"}")
+
+        // Setup dropdown adapters (do this once)
+        setupDropdownAdapters(currentPlant)
+
         currentPlant?.let {
+            // Update the UI based on currentPlant (without re-setting the dropdowns)
+            if (binding.letterSpinner.selectedItem == null || binding.numberSpinner.selectedItem == null) {
+                // Only update spinners once if not set already
+                updateTableNameDropdown(it.TableName ?: "")
+            }
+            // This method handles other UI elements unrelated to spinners
             PlantUIUpdater.updateUI(binding, it)
         }
 
-        setupDropdownAdapters(currentPlant)
         setupListeners()
         setupBackButtonCallback()
     }
@@ -110,14 +125,46 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     }
 
     override fun onResume() {
+        Log.d("EditPlantActivity", "onResume called")
         super.onResume()
+
         currentPlant?.let {
-            // Update only if necessary and avoid resetting images
+            // Avoid resetting images if photo is uploading
             if (!PlantSaveManager.isPhotoUploading) {
-                updateUI(it)
-                setupDropdownAdapters(it)
+                Log.d("onResume", "Current plant in onResume: ${it.TableName}")
+
+                // Only call this once, as it may reset spinner selections
+                if (binding.numberSpinner.selectedItem == null || binding.letterSpinner.selectedItem == null) {
+                    setupDropdownAdapters(it)
+                }
+
+                // Ensure we don't re-set the dropdown values here unless needed
+                if (binding.letterSpinner.selectedItem == null || binding.numberSpinner.selectedItem == null) {
+                    updateTableNameDropdown(it.TableName ?: "")
+                }
+
+                // Delay the log of spinner selections until the layout is fully ready
+                binding.letterSpinner.viewTreeObserver.addOnGlobalLayoutListener(
+                    object : ViewTreeObserver.OnGlobalLayoutListener {
+                        override fun onGlobalLayout() {
+                            Log.d("onResume", "Letter spinner selection after resume: ${binding.letterSpinner.selectedItem}")
+                            binding.letterSpinner.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        }
+                    }
+                )
+
+                binding.numberSpinner.viewTreeObserver.addOnGlobalLayoutListener(
+                    object : ViewTreeObserver.OnGlobalLayoutListener {
+                        override fun onGlobalLayout() {
+                            Log.d("onResume", "Number spinner selection after resume: ${binding.numberSpinner.selectedItem}")
+                            binding.numberSpinner.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        }
+                    }
+                )
             }
+            updateUI(it)
         }
+
         InactivityDetector(this).reset()
     }
 
@@ -215,21 +262,22 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         plant.PlantStatus?.let { updateParentPlantFieldsVisibility(it) }
         plant.PlantStatus?.let { updatePurchasePriceVisibility(it) }
 
-        // Load images or set plus icon if photo is null or empty
-        loadOrSetPlaceholder(plant.Photo1, binding.photoEdit1)
-        loadOrSetPlaceholder(plant.Photo2, binding.photoEdit2)
-        loadOrSetPlaceholder(plant.Photo3, binding.photoEdit3)
-        loadOrSetPlaceholder(plant.Photo4, binding.photoEdit4)
+        if (!imagesLoaded) {
+            loadOrSetPlaceholder(plant.Photo1, binding.photoEdit1)
+            loadOrSetPlaceholder(plant.Photo2, binding.photoEdit2)
+            loadOrSetPlaceholder(plant.Photo3, binding.photoEdit3)
+            loadOrSetPlaceholder(plant.Photo4, binding.photoEdit4)
+            imagesLoaded = true
+        }
     }
 
     private fun loadOrSetPlaceholder(photoUrl: String?, imageView: ImageView) {
-        if (photoUrl.isNullOrEmpty()) {
-            // Set the plus icon if there's no photo URL
+        if (imageView.drawable == null || photoUrl.isNullOrEmpty()) {
+            // Only set the plus icon if there's no photo URL and if the ImageView is empty
             imageView.setImageResource(R.drawable.ic_add)
             imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
         } else {
-            // If there's a valid photo URL, load the image
-            // Make sure Glide handles the image without clearing unnecessarily
+            // If there's a valid photo URL and the ImageView is not empty, load the image
             PhotoManager.loadImageWithRetry(photoUrl, imageView, this)
         }
     }
@@ -327,49 +375,101 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupDropdownAdapters(plant: Plant?) {
-        Log.d("EditPlantActivity", "Setting up dropdown adapters")
+        Log.d("EditPlantActivity", "Setting up dropdown adapters for plant: $plant")
+
         lifecycleScope.launch {
-            // Setup the adapters
+            // Setup the adapters for Family, Status, and Table Name
             PlantDropdownAdapter.setupFamilyAdapter(applicationContext)
             PlantDropdownAdapter.setupStatusAdapter(applicationContext)
             PlantDropdownAdapter.setupTableNameAdapters(applicationContext)
 
-            // Apply the adapters to the views
+            // Apply the family adapter to the Family dropdown
             PlantDropdownAdapter.applyFamilyAdapterCommon(
                 PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
                 applicationContext,
                 plant?.Family ?: ""
             )
+
+            // Apply the status adapter to the Status dropdown
             PlantDropdownAdapter.applyStatusAdapter(
                 PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
                 plant?.PlantStatus ?: ""
             )
-            PlantDropdownAdapter.applyTableNameAdapters(
-                PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
-                plant?.TableName ?: ""
-            )
 
-            // Add OnTouchListener to letterSpinner to reset inactivity detector on touch
+            // Ensure we update both letter and number spinners properly
+            plant?.TableName?.let {
+                // Apply adapters first to ensure we can set selections
+                Log.d("setupDropdownAdapters", "Applying TableName adapters for TableName: $it")
+                PlantDropdownAdapter.applyTableNameAdapters(
+                    PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
+                    it
+                )
+
+                // Now update spinners after adapters are applied
+                updateTableNameDropdown(it)
+            }
+
+            // Add OnTouchListener to reset inactivity timer on user interaction
             binding.letterSpinner.setOnTouchListener { _, _ ->
-                InactivityDetector(this@EditPlantActivity).reset() // Reset inactivity timer
-                false // Return false to let the spinner handle the touch event as usual
+                InactivityDetector(this@EditPlantActivity).reset()
+                false
             }
 
-            // Add OnTouchListener to numberSpinner to reset inactivity detector on touch
             binding.numberSpinner.setOnTouchListener { _, _ ->
-                InactivityDetector(this@EditPlantActivity).reset() // Reset inactivity timer
-                false // Return false to let the spinner handle the touch event as usual
+                InactivityDetector(this@EditPlantActivity).reset()
+                false
             }
 
-            // Update species dropdown if family is set
+            // Update species dropdown if Family is set
             plant?.Family?.let { family ->
                 if (family.isNotEmpty()) {
                     updateSpeciesDropdown(family, plant.Species ?: "")
                 }
             }
 
-            // Setup parent plant dropdowns
+            // Setup parent plant dropdowns if necessary
             setupParentPlantDropdowns(plant)
+        }
+    }
+
+    private fun updateTableNameDropdown(tableName: String) {
+        Log.d("EditPlantActivity", "Updating TableName dropdowns for: $tableName")
+
+        if (tableName.length > 1) {
+            val letter = tableName.substring(0, 1) // Extract the letter
+            val number = tableName.substring(1).toIntOrNull() // Extract the number
+
+            if (number != null) {
+                Log.d("updateTableNameDropdown", "Parsed TableName: Letter = $letter, Number = $number")
+
+                // Set the letter spinner
+                binding.letterSpinner.viewTreeObserver.addOnGlobalLayoutListener(
+                    object : ViewTreeObserver.OnGlobalLayoutListener {
+                        override fun onGlobalLayout() {
+                            Log.d("updateTableNameDropdown", "Setting letter spinner to: $letter")
+                            binding.letterSpinner.setSelection(
+                                PlantDropdownAdapter.letterAdapter?.getPosition(letter) ?: 0
+                            )
+                            binding.letterSpinner.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        }
+                    }
+                )
+
+                // Set the number spinner (zero-based index)
+                binding.numberSpinner.viewTreeObserver.addOnGlobalLayoutListener(
+                    object : ViewTreeObserver.OnGlobalLayoutListener {
+                        override fun onGlobalLayout() {
+                            Log.d("updateTableNameDropdown", "Setting number spinner to: $number")
+                            binding.numberSpinner.setSelection(number - 1)
+                            binding.numberSpinner.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                        }
+                    }
+                )
+            } else {
+                Log.w("updateTableNameDropdown", "Invalid number in TableName: $tableName")
+            }
+        } else {
+            Log.w("updateTableNameDropdown", "Invalid TableName format: $tableName")
         }
     }
 
@@ -487,7 +587,19 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
     private fun handlePhotoChanged(photoPath: String, photoIndex: Int) {
         InactivityDetector(this).reset()
-        PhotoManager.handlePhotoChanged(photoPath, photoIndex, currentPlant, this, this, lifecycleScope)
+        imagesLoaded = false
+
+        // Call PhotoManager to handle the photo change and upload
+        PhotoManager.handlePhotoChanged(
+            photoPath = photoPath,
+            photoIndex = photoIndex,
+            currentPlant = currentPlant,  // Pass the current plant
+            tempStockID = null,  // No tempStockID for EditPlantActivity
+            isEditMode = true,  // Always edit mode in EditPlantActivity
+            binding = this as PhotoManager.PlantBinding,  // Assuming this implements PlantBinding
+            activity = this,
+            scope = lifecycleScope
+        )
     }
 
     private fun handlePhotoRemoved(photoIndex: Int) {

@@ -1,7 +1,6 @@
 package com.example.rrhe
 
 import android.app.Activity
-import android.content.ContentResolver
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -67,13 +66,15 @@ object PhotoManager {
         photoPath: String,
         photoIndex: Int,
         currentPlant: Plant?,
+        tempStockID: Int?, // Pass tempStockID for new plants
+        isEditMode: Boolean, // Is it editing an existing plant or adding a new one?
         binding: PlantBinding,
         activity: AppCompatActivity,
         scope: CoroutineScope
     ) {
         val uri = Uri.parse(photoPath)
 
-        // Update the ImageView with the photo and cache it
+        // Only update the specific ImageView that corresponds to the new photo
         updateImageViewWithGlide(uri.toString(), binding, photoIndex, activity)
 
         scope.launch(Dispatchers.IO) {
@@ -101,16 +102,27 @@ object PhotoManager {
             */
 
             // Directly upload the photo without resizing
-            handlePhotoUpload(uri, activity, currentPlant?.StockID ?: -1, photoIndex, binding, activity, scope)
+            // Determine if we are editing an existing plant or creating a new one
 
-            // No need for special handling of negative StockID
-            // Photos are uploaded directly, regardless of StockID value
+            handlePhotoUpload(
+                uri,
+                activity,
+                currentPlant?.StockID ?: tempStockID ?: -1, // Use tempStockID if no current plant
+                tempStockID,  // Pass tempStockID for new plants
+                isEditMode,   // Check if it's edit mode or not
+                photoIndex,
+                binding,
+                activity,
+                scope
+            )
         }
     }
 
     // Upload cached photos after StockID is updated
     fun uploadCachedPhotos(
         stockID: Int,
+        tempStockID: Int?,  // Add tempStockID as a parameter
+        isEditMode: Boolean, // Add isEditMode as a parameter
         binding: PlantBinding,
         activity: AppCompatActivity,
         scope: CoroutineScope
@@ -119,17 +131,29 @@ object PhotoManager {
             tempFiles.forEachIndexed { index, file ->
                 val photoUri = Uri.fromFile(file)
                 val photoIndex = index + 1
-                val photoPath = uploadPhotoToServer(photoUri, activity, stockID, photoIndex)
+
+                // Use the correct stockID (temp or normal) when uploading the photo
+                val photoPath = uploadPhotoToServer(
+                    photoUri,
+                    activity,
+                    stockID,  // Use normal StockID after sync
+                    tempStockID, // Pass the tempStockID for new plants
+                    isEditMode, // Check if it's edit mode or not
+                    photoIndex
+                )
+
                 withContext(Dispatchers.Main) {
                     if (photoPath != null) {
                         updateImageViewWithGlide(photoPath, binding, photoIndex, activity)
                         showToast(activity, "Photo $photoIndex uploaded successfully")
                     } else {
-                        showToast(activity, "Failed to upload photo $photoIndex")
+                        Log.e("PhotoManager", "Failed to upload photo $photoIndex")
                     }
+
+                    // No need to show a toast for failure since the message will be logged
                 }
             }
-            tempFiles.clear()
+            tempFiles.clear() // Clear the temp files after successful uploads
         }
     }
 
@@ -199,10 +223,12 @@ object PhotoManager {
         return inSampleSize
     }
 
-    private fun handlePhotoUpload(
+    fun handlePhotoUpload(
         photoUri: Uri,
         context: Context,
-        stockID: Int,  // Whether negative or positive, stockID is used as is
+        stockID: Int,
+        tempStockID: Int?, // Add tempStockID for new plants
+        isEditMode: Boolean, // Check if it's edit mode or not
         photoIndex: Int,
         binding: PlantBinding,
         activity: AppCompatActivity,
@@ -214,7 +240,18 @@ object PhotoManager {
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val photoPath = uploadPhotoToServer(photoUri, context, stockID, photoIndex)
+            // Determine whether to use stockID or tempStockID
+            val idToUse = if (isEditMode) {
+                stockID  // Use stockID for existing plant (edit mode)
+            } else {
+                tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
+            }
+
+            // Log to verify the correct ID is being used
+            Log.d("PhotoManager", "Uploading photo with ID: $idToUse, isEditMode: $isEditMode, photoIndex: $photoIndex")
+
+            // Upload the photo to server
+            val photoPath = uploadPhotoToServer(photoUri, context, idToUse, tempStockID, isEditMode, photoIndex)
 
             withContext(Dispatchers.Main) {
                 if (photoPath != null) {
@@ -232,41 +269,74 @@ object PhotoManager {
         }
     }
 
-    internal suspend fun uploadPhotoToServer(photoUri: Uri, context: Context, stockID: Int, photoIndex: Int): String? {
-        val fileName = "${stockID}_${photoIndex}.jpg"
-        var tempFile: File?
+    internal suspend fun uploadPhotoToServer(
+        photoUri: Uri,
+        context: Context,
+        stockID: Int,
+        tempStockID: Int?,
+        isEditMode: Boolean,
+        photoIndex: Int
+    ): String? {
+        // Log the start of the upload process and all the parameters
+        Log.d("PhotoManager", "Starting upload process - stockID: $stockID, tempStockID: $tempStockID, isEditMode: $isEditMode, photoIndex: $photoIndex")
+
+        // Determine which ID to use based on edit mode
+        val idToUse = if (isEditMode) {
+            Log.d("PhotoManager", "Edit mode detected, using stockID: $stockID")
+            stockID  // Existing plant, use stockID
+        } else {
+            // Ensure tempStockID is not null for new plants
+            tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
+        }
+
+        // Generate the correct filename: {stockID or tempStockID}_{photoIndex}.jpg
+        val fileName = "${idToUse}_${photoIndex}.jpg"
+        Log.d("PhotoManager", "Generated fileName: $fileName for the upload")
+
+        var tempFile: File? = null
 
         return withContext(Dispatchers.IO) {
             try {
-                if (photoUri.scheme != ContentResolver.SCHEME_CONTENT && photoUri.scheme != ContentResolver.SCHEME_FILE) {
-                    Log.e("PhotoManager", "Cannot upload photo: Not a local file URI")
-                    return@withContext null
-                }
-
+                // Create a temporary file in the cache directory with the correct filename
                 tempFile = File(context.cacheDir, fileName)
+                Log.d("PhotoManager", "Temporary file created at: ${tempFile!!.absolutePath}")
+
+                // Copy the content from the photoUri to the temporary file
                 context.contentResolver.openInputStream(photoUri)?.use { inputStream ->
                     FileOutputStream(tempFile!!).use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
+                    Log.d("PhotoManager", "Photo successfully copied to temp file")
+                } ?: run {
+                    Log.e("PhotoManager", "Failed to open input stream for URI: $photoUri")
+                    return@withContext null
                 }
 
+                // Build multipart form data for the upload
                 val requestBody = MultipartBody.Builder()
                     .setType(MultipartBody.FORM)
                     .addFormDataPart("file", tempFile!!.name, tempFile!!.asRequestBody("image/jpeg".toMediaTypeOrNull()))
                     .build()
 
+                Log.d("PhotoManager", "Starting upload for file: $fileName with URI: $photoUri")
+
+                // Upload the photo via Retrofit and add URL logging
+                Log.d("PhotoManager", "Uploading to URL: ${ApiConfig.getHttpServerBaseUrl()}/upload")
                 val response = ApiClient.httpServerApiService.uploadPhoto(requestBody)
 
                 if (response.isSuccessful) {
-                    Log.d("PhotoManager", "Photo uploaded successfully: $fileName")
+                    Log.d("PhotoManager", "Photo uploaded successfully. Server response: ${response.body()?.string()}")
                     return@withContext ApiConfig.getHttpServerBaseUrl() + tempFile!!.name
                 } else {
-                    Log.e("PhotoManager", "Failed to upload photo")
+                    Log.e("PhotoManager", "Photo upload failed. Error code: ${response.code()}, Error body: ${response.errorBody()?.string()}")
                 }
+
             } catch (e: Exception) {
-                Log.e("PhotoManager", "Error uploading photo: ${e.message}", e)
+                Log.e("PhotoManager", "Error during photo upload: ${e.message}", e)
             } finally {
-                // Keep tempFile for later deletion after save or exit
+                // Delete the temporary file after upload
+                tempFile?.delete()
+                Log.d("PhotoManager", "Temporary file deleted: ${tempFile?.absolutePath}")
             }
             return@withContext null
         }

@@ -30,8 +30,8 @@
     <string name="purchase_price_hint">Purchase Price</string>
     <string name="usd_hint">USD</string>
     <string name="eur_hint">EUR</string>
-    <string name="usd_edit_text">USD: %1$d</string>
-    <string name="eur_edit_text">EUR: %1$d</string>
+    <string name="usd_edit_text">%1$d</string>
+    <string name="eur_edit_text">%1$d</string>
     <string name="total_value_edit_text">Total Value: %1$d</string>
     <string name="plant_description_hint">Plant Description</string>
     <string name="thai_name_hint">Thai Name</string>

@@ -17,7 +17,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-import kotlin.coroutines.cancellation.CancellationException
 
 object PlantSaveManager {
     internal var isPhotoUploading = false
@@ -189,12 +188,14 @@ object PlantSaveManager {
         newBinding: ActivityNewPlantBinding?,
         currentPlant: Plant?,
         isEditMode: Boolean,
-        plantBindingWrapper: PlantValueCalculator.PlantBindingWrapper
+        plantBindingWrapper: PlantValueCalculator.PlantBindingWrapper,
+        tempStockID: Int? = null // Add tempStockID as an optional parameter for new plants
     ): Plant {
+        // Use tempStockID for new plants, and normal StockID for existing plants
         val stockID = if (isEditMode) {
             currentPlant?.StockID ?: throw IllegalStateException("Editing mode but StockID is null")
         } else {
-            generateTempStockID()
+            tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
         }
 
         // Fetch calculated values from PlantBindingWrapper
@@ -203,21 +204,35 @@ object PlantSaveManager {
         val usdValue = plantBindingWrapper.getUSD().toIntOrNull()
         val eurValue = plantBindingWrapper.getEUR().toIntOrNull()
 
+        Log.d("PlantSaveManager", "Calculated values before saving: totalValue=$totalValue, usdValue=$usdValue, eurValue=$eurValue")
+        Log.d("PlantSaveManager", "USD fetched from binding before saving: $usdValue")
+        Log.d("PlantSaveManager", "EUR fetched from binding before saving: $eurValue")
+
         // Upload photos asynchronously via PhotoManager and handle null cases
         val photo1Path = (binding?.photoEdit1?.tag as? Uri ?: newBinding?.photoEdit1?.tag as? Uri)?.let {
-            PhotoManager.uploadPhotoToServer(it, context, stockID, 1)
+            // Determine whether to use stockID or tempStockID
+            val idToUse = if (isEditMode) stockID else tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
+
+            // Call the PhotoManager function with the correct parameters
+            PhotoManager.uploadPhotoToServer(it, context, idToUse, 1, isEditMode, tempStockID!!)
         }
 
         val photo2Path = (binding?.photoEdit2?.tag as? Uri ?: newBinding?.photoEdit2?.tag as? Uri)?.let {
-            PhotoManager.uploadPhotoToServer(it, context, stockID, 2)
+            val idToUse = if (isEditMode) stockID else tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
+
+            PhotoManager.uploadPhotoToServer(it, context, idToUse, 2, isEditMode, tempStockID!!)
         }
 
         val photo3Path = (binding?.photoEdit3?.tag as? Uri ?: newBinding?.photoEdit3?.tag as? Uri)?.let {
-            PhotoManager.uploadPhotoToServer(it, context, stockID, 3)
+            val idToUse = if (isEditMode) stockID else tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
+
+            PhotoManager.uploadPhotoToServer(it, context, idToUse, 3, isEditMode, tempStockID!!)
         }
 
         val photo4Path = (binding?.photoEdit4?.tag as? Uri ?: newBinding?.photoEdit4?.tag as? Uri)?.let {
-            PhotoManager.uploadPhotoToServer(it, context, stockID, 4)
+            val idToUse = if (isEditMode) stockID else tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
+
+            PhotoManager.uploadPhotoToServer(it, context, idToUse, 4, isEditMode, tempStockID!!)
         }
 
         val motherPlantStockID = binding?.mIdAutoCompleteTextView?.text?.toString()
@@ -232,7 +247,7 @@ object PlantSaveManager {
 
         // Only assert that StockID is negative in new plant creation
         if (!isEditMode) {
-            Log.d("PlantSaveManager", "Generated StockID: $stockID")
+            Log.d("PlantSaveManager", "Using Temp StockID: $stockID")
             assert(stockID < 0) { "Temp StockID should always be negative, found: $stockID" }
         }
 
@@ -262,17 +277,17 @@ object PlantSaveManager {
                 PurchasePrice = binding?.purchasePriceEditText?.text.toString().toIntOrNull(),
                 PlantDescription = convertEmptyToNull(binding?.plantDescriptionEditText?.text.toString()),
                 ThaiName = convertEmptyToNull(binding?.thaiNameText?.text.toString()),
-                TableName = convertEmptyToNull("${binding?.letterSpinner?.selectedItem}${binding?.numberSpinner?.selectedItem}"),
+                NameConcat = convertEmptyToNull(binding?.nameConcatText?.text.toString()) ?: currentPlant.NameConcat,
                 TraySize = convertEmptyToNull(binding?.traySizeEditText?.text.toString()),
                 Grams = binding?.gramsEditText?.text.toString().toIntOrNull(),
                 PlantStatus = convertEmptyToNull(binding?.plantStatusAutoCompleteTextView?.text.toString()),
                 StatusNote = convertEmptyToNull(binding?.statusNoteEditText?.text.toString()),
                 Mother = if (binding?.motherSwitch?.isChecked == true) 1 else currentPlant.Mother ?: 0,
                 Website = if (binding?.websiteSwitch?.isChecked == true) 1 else currentPlant.Website ?: 0,
-                Photo1 = convertEmptyToNull(photo1Path ?: currentPlant.Photo1),
-                Photo2 = convertEmptyToNull(photo2Path ?: currentPlant.Photo2),
-                Photo3 = convertEmptyToNull(photo3Path ?: currentPlant.Photo3),
-                Photo4 = convertEmptyToNull(photo4Path ?: currentPlant.Photo4),
+                Photo1 = convertEmptyToNull((photo1Path ?: currentPlant.Photo1).toString()),
+                Photo2 = convertEmptyToNull((photo2Path ?: currentPlant.Photo2).toString()),
+                Photo3 = convertEmptyToNull((photo3Path ?: currentPlant.Photo3).toString()),
+                Photo4 = convertEmptyToNull((photo4Path ?: currentPlant.Photo4).toString()),
                 LastEditedBy = currentUserName,
                 Stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
             ).ensureNonNullValues()
@@ -300,10 +315,10 @@ object PlantSaveManager {
                 StatusNote = convertEmptyToNull(newBinding?.statusNoteEditText?.text.toString()),
                 Mother = if (newBinding?.motherSwitch?.isChecked == true) 1 else 0,
                 Website = if (newBinding?.websiteSwitch?.isChecked == true) 1 else 0,
-                Photo1 = convertEmptyToNull(photo1Path),
-                Photo2 = convertEmptyToNull(photo2Path),
-                Photo3 = convertEmptyToNull(photo3Path),
-                Photo4 = convertEmptyToNull(photo4Path),
+                Photo1 = convertEmptyToNull(photo1Path.toString()),
+                Photo2 = convertEmptyToNull(photo2Path.toString()),
+                Photo3 = convertEmptyToNull(photo3Path.toString()),
+                Photo4 = convertEmptyToNull(photo4Path.toString()),
                 AddedBy = currentUserName,
                 LastEditedBy = null,
                 PlantedStart = dateFormat.format(today), // Set PlantedStart to today's date
@@ -322,6 +337,8 @@ object PlantSaveManager {
             ).ensureNonNullValues()
         }
 
+        // Log USD and EUR values before saving the plant
+        Log.d("PlantSaveManager", "Final plant before saving: USD=${plant.USD}, EUR=${plant.EUR}")
         Log.d("PlantSaveManager", if (isEditMode) "Updating existing plant: $plant" else "Saving new plant: $plant")
 
         if (!isEditMode) {
@@ -381,11 +398,11 @@ object PlantSaveManager {
         currentPlant: Plant?,
         lifecycleScope: LifecycleCoroutineScope,
         activity: AppCompatActivity,
-        isEditMode: Boolean // Use the isEditMode passed as a parameter
+        isEditMode: Boolean,
+        tempStockID: Int? = null // Add tempStockID as a parameter
     ) {
         Log.d("PlantSaveManager", "isEditMode: $isEditMode at the start of savePlantLocallyAndSync")
 
-        // If a photo is being uploaded and we are in edit mode, wait
         if (isEditMode && isPhotoUploading) {
             Log.e("PlantSaveManager", "Cannot proceed: Photo is still uploading in edit mode.")
             lifecycleScope.launch(Dispatchers.Main) {
@@ -402,14 +419,13 @@ object PlantSaveManager {
             else -> throw IllegalStateException("Binding is missing")
         }
 
-        // Launch the save operation in the IO thread to handle heavy tasks in the background
-        val job = lifecycleScope.launch(Dispatchers.IO) {
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
                 withContext(Dispatchers.Main) {
                     showToast(context, "Starting plant save process...")
                 }
 
-                // Recalculate values based on whether it's a new plant or editing an existing one
+                // Recalculate values for either new or existing plant
                 if (isEditMode) {
                     binding?.let {
                         PlantValueCalculator.recalculateValues(it, lifecycleScope, context)
@@ -420,40 +436,42 @@ object PlantSaveManager {
                     }
                 }
 
-                delay(1000) // Consider reducing or removing this delay if not necessary
+                delay(1000) // Optional delay
 
-                // Perform local save (both new and existing plants)
+                // Perform local save (new or existing plants), pass tempStockID for new plants
                 val plant = performLocalSave(
                     context = context,
                     binding = binding,
                     newBinding = newBinding,
                     currentPlant = currentPlant,
                     isEditMode = isEditMode,
-                    plantBindingWrapper = plantBindingWrapper
+                    plantBindingWrapper = plantBindingWrapper,
+                    tempStockID = tempStockID // Ensure tempStockID is passed here
                 )
 
                 activity.finish()
 
-                // Sync with the main database for new plants
                 if (!isEditMode) {
                     Log.d("PlantSaveManager", "Syncing new plant with main database")
                     SyncManager.syncNewPlant(plant) { newStockID ->
                         lifecycleScope.launch(Dispatchers.IO) {
-                            uploadCachedPhotosWithBinding(newStockID, binding, newBinding, activity, lifecycleScope)
+                            // Upload cached photos with correct StockID
+                            uploadCachedPhotosWithBinding(
+                                newStockID = newStockID,
+                                binding = binding,
+                                newBinding = newBinding,
+                                activity = activity,
+                                lifecycleScope = lifecycleScope,
+                                tempStockID = plant.StockID,
+                                isEditMode = false
+                            )
                         }
                     }
                 } else {
-                    // Sync with the database for existing plants
                     Log.d("PlantSaveManager", "Final sync for an existing plant")
                     syncWithDatabase(plant, activity)
                 }
 
-            } catch (e: CancellationException) {
-                Log.e("PlantSaveManager", "Job was cancelled: ${e.message}", e)
-                Log.e("PlantSaveManager", "Job was cancelled. Coroutine context: ${lifecycleScope.coroutineContext}")
-                withContext(Dispatchers.Main) {
-                    showToast(activity, "Job was cancelled: ${e.message}")
-                }
             } catch (e: Exception) {
                 Log.e("PlantSaveManager", "Error saving plant: ${e.message}", e)
                 withContext(Dispatchers.Main) {
@@ -461,32 +479,7 @@ object PlantSaveManager {
                 }
             }
         }
-
-        // Handle the job completion with better detail on cancellation or success
-        job.invokeOnCompletion { throwable ->
-            when (throwable) {
-                null -> {
-                    Log.d("PlantSaveManager", "Job completed successfully.")
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        showToast(activity, "Plant save process completed.")
-                    }
-                }
-                is CancellationException -> {
-                    Log.e("PlantSaveManager", "Job was cancelled: ${throwable.message}. Stack trace: ${Log.getStackTraceString(throwable)}")
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        showToast(activity, "Job was cancelled: ${throwable.message}")
-                    }
-                }
-                else -> {
-                    Log.e("PlantSaveManager", "Job failed with exception: ${throwable.message}. Stack trace: ${Log.getStackTraceString(throwable)}")
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        showToast(activity, "Job failed with exception: ${throwable.message}")
-                    }
-                }
-            }
-        }
     }
-
 
     private fun navigateToEditPlantScreen(activity: AppCompatActivity, stockID: Int) {
         Log.d("PlantSaveManager", "Navigating to Edit Plant screen with StockID: $stockID")
@@ -503,16 +496,34 @@ object PlantSaveManager {
         binding: ActivityEditPlantBinding?,
         newBinding: ActivityNewPlantBinding?,
         activity: AppCompatActivity,
-        lifecycleScope: LifecycleCoroutineScope
+        lifecycleScope: LifecycleCoroutineScope,
+        tempStockID: Int?,  // For new plants
+        isEditMode: Boolean // To distinguish between new and existing plants
     ) {
         try {
+            // Get the correct PlantBinding for either Edit or New Plant
             val plantBinding = when {
                 binding != null -> PhotoManager.getPlantBinding(binding)
                 newBinding != null -> PhotoManager.getPlantBinding(newBinding)
                 else -> throw IllegalStateException("Both bindings cannot be null")
             }
-            PhotoManager.uploadCachedPhotos(newStockID, plantBinding, activity, lifecycleScope)
+
+            // Determine which stock ID to use
+            val stockIDToUse = if (isEditMode) newStockID else tempStockID
+                ?: throw IllegalStateException("Temp StockID is not available for new plant")
+
+            // Upload cached photos with the determined stock ID
+            PhotoManager.uploadCachedPhotos(
+                stockID = stockIDToUse,  // Use stockIDToUse (newStockID or tempStockID)
+                binding = plantBinding,  // Pass PlantBinding (Edit or New)
+                activity = activity,  // Pass AppCompatActivity
+                scope = lifecycleScope,  // Pass LifecycleCoroutineScope for coroutine handling
+                isEditMode = isEditMode,  // Pass isEditMode to indicate if it's an edit or a new plant
+                tempStockID = tempStockID  // Pass tempStockID for new plants
+            )
+
         } catch (e: Exception) {
+            // Log the error and show a toast on the main thread
             Log.e("PlantSaveManager", "Error uploading cached photos: ${e.message}", e)
             withContext(Dispatchers.Main) {
                 showToast(activity, "Error uploading photos: ${e.message}")
@@ -520,7 +531,7 @@ object PlantSaveManager {
         }
     }
 
-    private fun generateTempStockID(): Int {
+    suspend fun generateTempStockID(): Int = withContext(Dispatchers.IO) {
         var tempStockID: Int
         val stockIDList = PlantRepository.getAllStockIDs() // Retrieve all existing StockIDs
 
@@ -540,6 +551,6 @@ object PlantSaveManager {
 
         Log.d("StockIDGeneration", "Unique Temp StockID generated after $attempts attempt(s): $tempStockID")
 
-        return tempStockID
+        tempStockID
     }
 }

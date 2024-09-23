@@ -2,6 +2,7 @@ package com.example.rrhe
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -12,6 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.rrhe.databinding.ActivityNewPlantBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -22,6 +25,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
     private lateinit var binding: ActivityNewPlantBinding
     private var motherValue: Int = 0 // Storing mother switch value
     private var websiteValue: Int = 0 // Storing website switch value
+    private var tempStockID: Int = 0 // Store generated tempStockID here
 
     override val photoEdit1: ImageView
         get() = binding.photoEdit1
@@ -38,6 +42,12 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
         super.onCreate(savedInstanceState)
         binding = ActivityNewPlantBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Generate the tempStockID once when the activity is created
+        lifecycleScope.launch {
+            tempStockID = PlantSaveManager.generateTempStockID() // Call the suspend function
+            Log.d("NewPlantActivity", "Generated Temp StockID: $tempStockID")
+        }
 
         // Load images or set plus icons for the image views
         loadOrSetPlaceholder(null, binding.photoEdit1)
@@ -80,7 +90,8 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
                 currentPlant = null, // No current plant for new plants
                 lifecycleScope = lifecycleScope,
                 activity = this@NewPlantActivity,
-                isEditMode = false
+                isEditMode = false,
+                tempStockID = tempStockID // Pass the tempStockID here
             )
         }
     }
@@ -165,7 +176,18 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
             listOf(binding.photoEdit1, binding.photoEdit2, binding.photoEdit3, binding.photoEdit4),
             listOf(null, null, null, null), // No photos initially for new plants
             null, // No currentPlant for new plants
-            this::handlePhotoChanged,
+            { photoPath, photoIndex ->  // Wrap it in a suspend lambda
+                handlePhotoChanged(
+                    photoPath = photoPath,
+                    photoIndex = photoIndex,
+                    currentPlant = null,  // No current plant for new ones
+                    tempStockID = tempStockID,  // Use the generated tempStockID
+                    isEditMode = false,  // Not in edit mode in NewPlantActivity
+                    binding = this@NewPlantActivity as PhotoManager.PlantBinding, // Pass binding to the method
+                    activity = this@NewPlantActivity,  // Pass activity to the method
+                    scope = lifecycleScope  // Pass coroutine scope to the method
+                )
+            },
             this::handlePhotoRemoved,
             this
         )
@@ -350,7 +372,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
         }
     }
 
-    private fun updateImageViewWithGlide(photoPath: String, binding: ActivityNewPlantBinding, photoIndex: Int, context: Context) {
+    private fun updateImageViewWithGlide(photoPath: String, binding: PhotoManager.PlantBinding, photoIndex: Int, context: Context) {
         Glide.with(context)
             .load(photoPath)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -368,11 +390,35 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
             )
     }
 
-    private fun handlePhotoChanged(photoPath: String, photoIndex: Int) {
-        PhotoManager.handlePhotoChanged(photoPath, photoIndex, null, this, this, lifecycleScope)
+    private suspend fun handlePhotoChanged(
+        photoPath: String,
+        photoIndex: Int,
+        currentPlant: Plant?,
+        tempStockID: Int?, // Pass tempStockID for new plants
+        isEditMode: Boolean, // Add isEditMode as a parameter
+        binding: PhotoManager.PlantBinding,
+        activity: AppCompatActivity,
+        scope: CoroutineScope
+    ) {
+        val uri = Uri.parse(photoPath)
 
-        // After handling the photo change, update the ImageView
-        updateImageViewWithGlide(photoPath, binding, photoIndex, this)
+        // Update the ImageView with the photo and cache it
+        updateImageViewWithGlide(uri.toString(), binding, photoIndex, activity)
+
+        scope.launch(Dispatchers.IO) {
+            // Upload the photo immediately for both Edit and New Plant activities
+            PhotoManager.handlePhotoUpload(
+                uri,
+                activity,
+                currentPlant?.StockID ?: tempStockID ?: -1, // Use tempStockID if no current plant
+                tempStockID,  // Pass tempStockID for new plants
+                isEditMode,   // Check if it's edit mode or not
+                photoIndex,
+                binding,
+                activity,
+                scope
+            )
+        }
     }
 
     private fun handlePhotoRemoved(photoIndex: Int) {

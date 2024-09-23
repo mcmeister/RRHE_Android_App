@@ -20,7 +20,7 @@ object PlantDropdownAdapter {
     private var speciesAdapter: ArrayAdapter<String>? = null
     private var subspeciesAdapter: ArrayAdapter<String>? = null
     private var statusAdapter: ArrayAdapter<String>? = null
-    private var letterAdapter: ArrayAdapter<String>? = null
+    var letterAdapter: ArrayAdapter<String>? = null
     private var numberAdapter: ArrayAdapter<String>? = null
     private var motherPlantAdapter: ArrayAdapter<String>? = null
     private var fatherPlantAdapter: ArrayAdapter<String>? = null
@@ -122,14 +122,31 @@ object PlantDropdownAdapter {
 
             // Apply the number dropdown based on the current table name
             if (currentTableName.length > 1) {
-                val letter = currentTableName.substring(0, 1)
-                val number = currentTableName.substring(1)
+                val letter = currentTableName.substring(0, 1) // Extract letter
+                val number = currentTableName.substring(1).toIntOrNull() // Extract number
 
-                binding.letterSpinner.setSelection(letterAdapter?.getPosition(letter) ?: 0)
-                updateNumberSpinner(binding, letter)
-                binding.numberSpinner.setSelection(numberAdapter?.getPosition(number) ?: 0)
+                if (number != null) {
+                    Log.d("PlantDropdownAdapter", "TableName parsed: Letter = $letter, Number = $number")
+                    binding.letterSpinner.setSelection(letterAdapter?.getPosition(letter) ?: 0)
+                    updateNumberSpinner(binding, letter)
+
+                    // Log the contents of the number adapter
+                    Log.d("PlantDropdownAdapter", "Number spinner array: " +
+                            (0 until (binding.numberSpinner.adapter?.count ?: 0)).joinToString { index ->
+                                binding.numberSpinner.adapter.getItem(index).toString()
+                            }
+                    )
+
+                    // Set the number spinner selection to the extracted number
+                    binding.numberSpinner.post {
+                        Log.d("PlantDropdownAdapter", "Setting number spinner selection to: $number")
+                        binding.numberSpinner.setSelection(number - 1) // Zero-based index
+                    }
+                } else {
+                    Log.w("PlantDropdownAdapter", "Invalid number extracted from TableName: $currentTableName")
+                }
             } else {
-                // Default selection for new plant
+                // Handle default case when no valid TableName is present
                 binding.letterSpinner.setSelection(0)
                 updateNumberSpinner(binding, "A")
                 binding.numberSpinner.setSelection(0)
@@ -147,12 +164,26 @@ object PlantDropdownAdapter {
             else -> R.array.number_array // Default fallback, should not happen with defined letters
         }
 
+        Log.d("PlantDropdownAdapter", "Updating number spinner for letter $selectedLetter with array $numberArrayResId")
+
+        // Create the new number adapter with the correct array
         numberAdapter = ArrayAdapter(
             binding.letterSpinner.context,
             android.R.layout.simple_dropdown_item_1line,
             binding.letterSpinner.context.resources.getStringArray(numberArrayResId)
         )
+
+        // Set the adapter for the number spinner
         binding.numberSpinner.adapter = numberAdapter
+
+        // Ensure the adapter has been properly applied before setting selection
+        binding.numberSpinner.post {
+            if (binding.numberSpinner.adapter != null && binding.numberSpinner.adapter.count > 0) {
+                Log.d("PlantDropdownAdapter", "Number spinner adapter is set with ${binding.numberSpinner.adapter.count} items")
+            } else {
+                Log.e("PlantDropdownAdapter", "Number spinner adapter is not properly set or is empty")
+            }
+        }
     }
 
     private suspend fun handleFamilySelection(context: Context, familyName: String, binding: PlantBindingWrapper) {
