@@ -271,7 +271,7 @@ object PlantSaveManager {
                 F_ID = fatherPlantStockID ?: currentPlant.F_ID,
                 StockQty = binding?.stockQtyEditText?.text.toString().toIntOrNull()!!,
                 StockPrice = binding?.stockPriceEditText?.text.toString().toIntOrNull(),
-                TotalValue = binding?.totalValueEditText?.text.toString().toIntOrNull() ?: currentPlant.TotalValue,
+                TotalValue = totalValue,
                 USD = binding?.usdEditText?.text.toString().toIntOrNull() ?: currentPlant.USD,
                 EUR = binding?.eurEditText?.text.toString().toIntOrNull() ?: currentPlant.EUR,
                 PurchasePrice = binding?.purchasePriceEditText?.text.toString().toIntOrNull(),

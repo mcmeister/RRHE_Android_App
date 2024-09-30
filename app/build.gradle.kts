@@ -5,6 +5,15 @@ plugins {
     id("com.google.devtools.ksp") version "1.9.0-1.0.13" // Updated KSP plugin
     id("kotlin-parcelize")
     id("com.google.gms.google-services")
+    id("com.apollographql.apollo3")
+}
+
+apollo {
+    service("shopify") {
+        packageNamesFromFilePaths()
+        schemaFile.set(file("src/main/graphql/rrhe/schema.graphqls"))
+        generateKotlinModels.set(true)
+    }
 }
 
 android {
@@ -66,6 +75,11 @@ android {
 }
 
 dependencies {
+    //Apollo(GraphQL, Shopify)
+    implementation("com.apollographql.apollo3:apollo-runtime:3.7.3")
+    implementation("com.apollographql.apollo3:apollo-normalized-cache-sqlite:3.7.3")
+    implementation("com.apollographql.apollo3:apollo-http-cache:3.7.3")
+    
     // Accompanist
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.accompanist.pager)
@@ -105,6 +119,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.okhttp3.integration)
     ksp(libs.glide.compiler)
+    // kapt(libs.glide.compiler)
 
     // Jetpack Compose
     implementation(libs.ui)

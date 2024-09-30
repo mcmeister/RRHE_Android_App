@@ -8,5 +8,6 @@ plugins {
 buildscript {
     dependencies {
         classpath(libs.google.services) // Add Google services classpath here
+        classpath("com.apollographql.apollo3:apollo-gradle-plugin:3.7.3")
     }
 }

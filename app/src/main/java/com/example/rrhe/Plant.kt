@@ -89,3 +89,12 @@ data class Plant(
         )
     }
 }
+
+fun Plant.getPhotos(): List<ShopifyImage> {
+    val photos = mutableListOf<ShopifyImage>()
+    if (!Photo1.isNullOrBlank()) photos.add(ShopifyImage(src = Photo1!!))
+    if (!Photo2.isNullOrBlank()) photos.add(ShopifyImage(src = Photo2!!))
+    if (!Photo3.isNullOrBlank()) photos.add(ShopifyImage(src = Photo3!!))
+    if (!Photo4.isNullOrBlank()) photos.add(ShopifyImage(src = Photo4!!))
+    return photos
+}

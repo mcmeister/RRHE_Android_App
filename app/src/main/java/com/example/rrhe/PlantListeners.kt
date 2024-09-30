@@ -23,6 +23,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -31,6 +32,7 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.bumptech.glide.request.target.Target
 
 object PlantListeners {
 
@@ -158,6 +160,7 @@ object PlantListeners {
         Glide.with(activity)
             .load(photoPath)
             .error(R.drawable.error_image)
+            .diskCacheStrategy(DiskCacheStrategy.NONE) // Skip cache for display
             .into(imageView)
 
         imageView.apply {
@@ -180,46 +183,52 @@ object PlantListeners {
     private suspend fun downloadPhoto(photoPath: String, stockID: String, photoIndex: Int, activity: AppCompatActivity) {
         val context = activity.applicationContext
 
-        val glideFile = withContext(Dispatchers.IO) {
-            Glide.with(context)
-                .asFile()
-                .load(photoPath)
-                .submit()
-                .get()
-        }
+        try {
+            val glideFile: File = withContext(Dispatchers.IO) {
+                Glide.with(context)
+                    .downloadOnly()
+                    .load(photoPath)
+                    .submit(Target.SIZE_ORIGINAL, Target.SIZE_ORIGINAL)
+                    .get()
+            }
 
-        val fileName = "${stockID}_${photoIndex}.jpg"
+            val fileName = "${stockID}_${photoIndex}.jpg"
 
-        val currentTimeMillis = System.currentTimeMillis()
-        val currentTimeFormatted = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(Date(currentTimeMillis))
+            val currentTimeMillis = System.currentTimeMillis()
+            val currentTimeFormatted = SimpleDateFormat("yyyy:MM:dd HH:mm:ss", Locale.US).format(Date(currentTimeMillis))
 
-        val contentValues = ContentValues().apply {
-            put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
-            put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-            put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
-            put(MediaStore.Images.Media.IS_PENDING, 1)
-            put(MediaStore.Images.Media.DATE_ADDED, currentTimeMillis / 1000L)
-            put(MediaStore.Images.Media.DATE_MODIFIED, currentTimeMillis / 1000L)
-        }
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES)
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+                put(MediaStore.Images.Media.DATE_ADDED, currentTimeMillis / 1000L)
+                put(MediaStore.Images.Media.DATE_MODIFIED, currentTimeMillis / 1000L)
+            }
 
-        val resolver = context.contentResolver
-        val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            val resolver = context.contentResolver
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
 
-        uri?.let {
-            try {
+            uri?.let {
                 withContext(Dispatchers.IO) {
-                    resolver.openOutputStream(it).use { outputStream ->
-                        glideFile.inputStream().copyTo(outputStream!!)
-                    }
-                }
+                    // Copy glideFile to a temporary file
+                    val tempFile = File(context.cacheDir, "temp_${System.currentTimeMillis()}.jpg")
+                    glideFile.copyTo(tempFile, overwrite = true)
 
-                withContext(Dispatchers.IO) {
-                    val photoFile = File(glideFile.path)
-                    val exif = ExifInterface(photoFile)
+                    // Modify Exif data in the temporary file
+                    val exif = ExifInterface(tempFile.absolutePath)
                     exif.setAttribute(ExifInterface.TAG_DATETIME, currentTimeFormatted)
                     exif.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, currentTimeFormatted)
                     exif.setAttribute(ExifInterface.TAG_DATETIME_DIGITIZED, currentTimeFormatted)
                     exif.saveAttributes()
+
+                    // Write the temp file with updated Exif data to the MediaStore
+                    resolver.openOutputStream(it, "w")?.use { outputStream ->
+                        tempFile.inputStream().copyTo(outputStream)
+                    }
+
+                    // Delete the temporary file
+                    tempFile.delete()
                 }
 
                 contentValues.clear()
@@ -227,17 +236,24 @@ object PlantListeners {
                 resolver.update(uri, contentValues, null, null)
 
                 Log.d("PlantListeners", "Photo saved to gallery: $uri")
-                showToast(context, "Photo saved to gallery")
-
-                MediaScannerConnection.scanFile(context, arrayOf(uri.toString()), null) { _, _ ->
-                    Log.d("PlantListeners", "MediaScanner completed.")
+                withContext(Dispatchers.Main) {
+                    showToast(context, "Photo saved to gallery")
                 }
 
-            } catch (e: IOException) {
-                Log.e("PlantListeners", "Failed to save photo to gallery", e)
+                // Optionally, scan the file to make it immediately available
+                MediaScannerConnection.scanFile(context, arrayOf(uri.toString()), null) { path, _ ->
+                    Log.d("PlantListeners", "MediaScanner completed: $path")
+                }
+
+            } ?: run {
+                Log.e("PlantListeners", "Failed to create MediaStore entry")
             }
-        } ?: run {
-            Log.e("PlantListeners", "Failed to create MediaStore entry")
+
+        } catch (e: Exception) {
+            Log.e("PlantListeners", "Error downloading photo", e)
+            withContext(Dispatchers.Main) {
+                showToast(context, "Failed to download photo: ${e.message}")
+            }
         }
     }
 

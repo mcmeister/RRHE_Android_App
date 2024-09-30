@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Web
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -142,6 +143,7 @@ class MainActivity : AppCompatActivity() {
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         Screen.StockScreen,
+        Screen.WebsiteScreen, // Place WebsiteScreen in the center
         Screen.StatsScreen
     )
     NavigationBar(
@@ -153,11 +155,12 @@ fun BottomNavigationBar(navController: NavController) {
                 icon = {
                     when (screen.route) {
                         Screen.StockScreen.route -> Icon(Icons.AutoMirrored.Filled.List, contentDescription = screen.route)
+                        Screen.WebsiteScreen.route -> Icon(Icons.Default.Web, contentDescription = screen.route) // Add an icon for Website
                         Screen.StatsScreen.route -> Icon(Icons.Default.BarChart, contentDescription = screen.route)
                     }
                 },
                 label = { Text(screen.route) },
-                selected = false, // Update this as needed
+                selected = false, // Update this as needed for selection state
                 onClick = {
                     navController.navigate(screen.route) {
                         popUpTo(navController.graph.startDestinationId) {

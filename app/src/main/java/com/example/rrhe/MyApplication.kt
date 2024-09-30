@@ -6,14 +6,12 @@ import android.util.Log
 import androidx.room.Room
 import androidx.work.Configuration
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 class MyApplication : Application() {
     lateinit var database: AppDatabase

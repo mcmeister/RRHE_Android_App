@@ -20,6 +20,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <application
+        android:usesCleartextTraffic="true"
         android:name=".MyApplication"
         android:launchMode="singleTask"
         android:clearTaskOnLaunch="true"
@@ -52,9 +53,12 @@
 
         <activity android:name=".StatsScreen" />
         <activity android:name=".StockScreen" />
+        <activity android:name=".WebsiteScreen" />
         <activity android:name=".EditPlantActivity" />
         <activity android:name=".NewPlantActivity" />
         <activity android:name=".PlantDetailsActivity" />
+        <activity android:name=".EditListingActivity" />
+        <activity android:name=".ListingDetailsActivity" />
         <activity android:name=".MainActivity" />
         <activity android:name=".QRScannerActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>

@@ -16,6 +16,10 @@ class ViewModelFactory(private val application: Application) : ViewModelProvider
                 @Suppress("UNCHECKED_CAST")
                 StatsViewModel() as T
             }
+            modelClass.isAssignableFrom(WebsiteViewModel::class.java) -> {
+                @Suppress("UNCHECKED_CAST")
+                WebsiteViewModel(application) as T
+            }
             else -> throw IllegalArgumentException("Unknown ViewModel class")
         }
     }

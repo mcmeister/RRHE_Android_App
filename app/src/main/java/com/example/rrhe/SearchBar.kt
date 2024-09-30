@@ -16,8 +16,8 @@ class SearchBar(
     private val searchIcon: ImageView,
     qrCodeButton: ImageView,
     clearSearchButton: ImageView,
-    private val motherFilterButton: ImageView,
-    private val websiteFilterButton: ImageView,
+    private val motherFilterButton: ImageView?,
+    private val websiteFilterButton: ImageView?,
     private val onSearch: (String, Boolean, Boolean) -> Unit
 ) {
     private var filterMother = false
@@ -43,13 +43,13 @@ class SearchBar(
             onSearch(interpretedQuery, filterMother, filterWebsite)
         }
 
-        motherFilterButton.setOnClickListener {
+        motherFilterButton?.setOnClickListener {
             filterMother = !filterMother
             updateFilterButtonColors()
             onSearch(searchEditText.text.toString(), filterMother, filterWebsite)
         }
 
-        websiteFilterButton.setOnClickListener {
+        websiteFilterButton?.setOnClickListener {
             filterWebsite = !filterWebsite
             updateFilterButtonColors()
             onSearch(searchEditText.text.toString(), filterMother, filterWebsite)
@@ -100,13 +100,13 @@ class SearchBar(
         val activeColor = ContextCompat.getColor(searchBarLayout.context, R.color.filter_active)
         val inactiveColor = ContextCompat.getColor(searchBarLayout.context, R.color.filter_inactive)
 
-        motherFilterButton.setColorFilter(if (filterMother) activeColor else inactiveColor)
-        websiteFilterButton.setColorFilter(if (filterWebsite) activeColor else inactiveColor)
+        motherFilterButton?.setColorFilter(if (filterMother) activeColor else inactiveColor)
+        websiteFilterButton?.setColorFilter(if (filterWebsite) activeColor else inactiveColor)
     }
 
     private fun resetFilterButtonColors() {
         val blackColor = ContextCompat.getColor(searchBarLayout.context, android.R.color.black)
-        motherFilterButton.setColorFilter(blackColor)
-        websiteFilterButton.setColorFilter(blackColor)
+        motherFilterButton?.setColorFilter(blackColor)
+        websiteFilterButton?.setColorFilter(blackColor)
     }
 }

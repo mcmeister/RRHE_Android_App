@@ -9,7 +9,7 @@ import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
 
-class InactivityDetector(private val context: Context, private val inactivityTimeout: Long = 120000, private val terminationTimeout: Long = 180000) {
+class InactivityDetector(private val context: Context, private val inactivityTimeout: Long = 120000, private val terminationTimeout: Long = 480000) {
 
     private val handler: Handler = Handler(Looper.getMainLooper())
     private val inactivityRunnable: Runnable = Runnable {
@@ -18,7 +18,7 @@ class InactivityDetector(private val context: Context, private val inactivityTim
     }
     private val terminationRunnable: Runnable = Runnable {
         Log.d("InactivityDetector", "Termination process triggered, app will terminate")
-        Toast.makeText(context, "User inactive for 5 minutes!", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, "User inactive for 10 minutes!", Toast.LENGTH_SHORT).show()
         Utils.terminateApp(context)
     }
 

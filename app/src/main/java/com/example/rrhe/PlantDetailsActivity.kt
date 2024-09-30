@@ -25,6 +25,10 @@ import com.example.rrhe.databinding.ActivityPlantDetailsBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 
 class PlantDetailsActivity : AppCompatActivity() {
 
@@ -44,6 +48,12 @@ class PlantDetailsActivity : AppCompatActivity() {
                 refreshPlantDetails()
             }
         }
+
+        // Set up copy to clipboard functionality
+        setupCopyToClipboard(binding.plantName, "Plant Name")
+        setupCopyToClipboard(binding.plantThaiName, "Thai Name")
+        setupCopyToClipboard(binding.plantDescription, "Plant Description")
+        setupCopyToClipboard(binding.statusNote, "Status Note")
 
         // Get the stockID from the intent if passed directly from the QR scanner
         stockID = intent.getIntExtra("stockId", 0)
@@ -131,6 +141,20 @@ class PlantDetailsActivity : AppCompatActivity() {
                 Log.d("PlantDetailsActivity", "Photo1 changed or removed, Glide cache cleared")
             } else {
                 Log.d("PlantDetailsActivity", "Photo1 unchanged, Glide cache not cleared")
+            }
+        }
+    }
+
+    private fun setupCopyToClipboard(textView: TextView, label: String) {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        textView.setOnClickListener {
+            val textToCopy = textView.text.toString()
+            if (textToCopy.isNotEmpty()) {
+                val clip = ClipData.newPlainText(label, textToCopy)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(this, "$label copied to clipboard", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "No $label to copy", Toast.LENGTH_SHORT).show()
             }
         }
     }

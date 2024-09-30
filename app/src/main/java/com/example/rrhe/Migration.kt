@@ -149,3 +149,29 @@ val MIGRATION_13_14 = object : Migration(13, 14) {
         }
     }
 }
+
+val MIGRATION_14_15 = object : Migration(14, 15) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // Create the new 'website' table
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS `website` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                `StockID` INTEGER NOT NULL,
+                `ShopifyID` INTEGER,
+                `ShopifySKU` TEXT,
+                `NameConcat` TEXT NOT NULL,
+                `StockQty` INTEGER NOT NULL,
+                `StockPrice` REAL NOT NULL,
+                `PlantDescription` TEXT NOT NULL,
+                `Photo1` TEXT,
+                `Photo2` TEXT,
+                `Photo3` TEXT,
+                `Photo4` TEXT,
+                `CreatedAt` TEXT,
+                `UpdatedAt` TEXT
+            )
+            """.trimIndent()
+        )
+    }
+}

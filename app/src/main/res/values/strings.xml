@@ -131,6 +131,11 @@
     <string name="app_version">V 1.0</string>
     <string name="plant_id_text_format">Stock ID: %1$d, %2$s, Stock Price: %3$d (Qty: %4$d)</string>
 
+    <!-- Shopify -->
+    <string name="shopify_qty">Shopify Quantity: %d</string>
+    <string name="shopify_id">Shopify ID: %s</string>
+    <string name="shopify_price" formatted="false">Shopify Price: %s %s</string>
+
     <!-- Strings for statuses -->
     <string-array name="statuses">
         <item>Purchase</item>
@@ -149,6 +154,8 @@
     <string name="login_button">Login</string>
     <string name="new_plant_title">New Plant</string>
     <string name="add_new_plant">Add New Plant</string>
+    <string name="shopify_listings">Shopify Listings</string>
+    <string name="add_new_listing">Add New Listing</string>
     <string-array name="letter_array">
         <item>A</item>
         <item>B</item>
