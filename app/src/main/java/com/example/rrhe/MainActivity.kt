@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Web
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -155,7 +155,7 @@ fun BottomNavigationBar(navController: NavController) {
                 icon = {
                     when (screen.route) {
                         Screen.StockScreen.route -> Icon(Icons.AutoMirrored.Filled.List, contentDescription = screen.route)
-                        Screen.WebsiteScreen.route -> Icon(Icons.Default.Web, contentDescription = screen.route) // Add an icon for Website
+                        Screen.WebsiteScreen.route -> Icon(Icons.Default.Public, contentDescription = screen.route)
                         Screen.StatsScreen.route -> Icon(Icons.Default.BarChart, contentDescription = screen.route)
                     }
                 },

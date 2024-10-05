@@ -128,7 +128,7 @@
     <string name="name_concat_format">%1$s %2$s %3$s</string>
     <string name="select_date_range">Select date range</string>
     <string name="select_date">Select date</string>
-    <string name="app_version">V 1.0</string>
+    <string name="app_version">V 1.1</string>
     <string name="plant_id_text_format">Stock ID: %1$d, %2$s, Stock Price: %3$d (Qty: %4$d)</string>
 
     <!-- Shopify -->
@@ -156,6 +156,10 @@
     <string name="add_new_plant">Add New Plant</string>
     <string name="shopify_listings">Shopify Listings</string>
     <string name="add_new_listing">Add New Listing</string>
+    <string name="print_button">Print</string>
+    <string name="print_template_label">Label Template</string>
+    <string name="print_template_sticker">Sticker Template</string>
+
     <string-array name="letter_array">
         <item>A</item>
         <item>B</item>

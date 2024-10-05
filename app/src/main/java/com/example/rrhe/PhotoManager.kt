@@ -128,7 +128,10 @@ object PhotoManager {
         scope: CoroutineScope
     ) {
         scope.launch(Dispatchers.IO) {
-            tempFiles.forEachIndexed { index, file ->
+            // Filter out any null or invalid files before attempting to upload
+            val validTempFiles = tempFiles.filter { it.exists() && it.length() > 0 }
+
+            validTempFiles.forEachIndexed { index, file ->
                 val photoUri = Uri.fromFile(file)
                 val photoIndex = index + 1
 
@@ -149,11 +152,11 @@ object PhotoManager {
                     } else {
                         Log.e("PhotoManager", "Failed to upload photo $photoIndex")
                     }
-
-                    // No need to show a toast for failure since the message will be logged
                 }
             }
-            tempFiles.clear() // Clear the temp files after successful uploads
+
+            // Clear the temp files after successful uploads
+            tempFiles.clear()
         }
     }
 
@@ -277,6 +280,12 @@ object PhotoManager {
         isEditMode: Boolean,
         photoIndex: Int
     ): String? {
+        // Ensure the photoUri is valid before starting the upload process
+        if (photoUri.toString().isEmpty()) {
+            Log.e("PhotoManager", "Invalid photoUri: $photoUri, cannot proceed with upload.")
+            return null
+        }
+
         // Log the start of the upload process and all the parameters
         Log.d("PhotoManager", "Starting upload process - stockID: $stockID, tempStockID: $tempStockID, isEditMode: $isEditMode, photoIndex: $photoIndex")
 

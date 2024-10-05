@@ -60,21 +60,40 @@ object SyncManager {
                 val successfullySynced = mutableListOf<PlantUpdateRequest>()
                 for (updateRequest in PlantRepository.unsyncedChanges) {
                     if (shouldStopSyncing) break
-                    val updateResponse = try {
-                        ApiClient.apiService.updatePlant(updateRequest)
-                    } catch (e: HttpException) {
+                    try {
+                        val response = ApiClient.apiService.updatePlant(updateRequest)
+                        if (response.isSuccessful) {
+                            successfullySynced.add(updateRequest)
+                            Log.d("SyncManager", "POST to main database successful with ID: ${updateRequest.StockID}")
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e("SyncManager", "Sync failed for plant ID: ${updateRequest.StockID}, HTTP ${response.code()}, error: $errorBody")
+
+                            // Handle specific status codes
+                            when (response.code()) {
+                                409 -> {
+                                    // Conflict error, handle accordingly
+                                    Log.e("SyncManager", "Conflict detected during sync for plant ID: ${updateRequest.StockID}")
+                                    // Decide whether to remove from unsyncedChanges or keep for retry
+                                    // For this example, we'll remove it to prevent infinite retries
+                                    successfullySynced.add(updateRequest)
+                                    withContext(Dispatchers.Main) {
+                                        showToast(MyApplication.instance, "Conflict during sync for plant ID: ${updateRequest.StockID}")
+                                    }
+                                }
+                                else -> {
+                                    // Handle other error codes if needed
+                                    withContext(Dispatchers.Main) {
+                                        showToast(MyApplication.instance, "Sync failed for plant ID: ${updateRequest.StockID}, HTTP ${response.code()}")
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
                         withContext(Dispatchers.Main) {
                             showToast(MyApplication.instance, "Sync failed for plant ID: ${updateRequest.StockID}")
                         }
-                        Log.e("SyncManager", "Sync failed for plant ID: ${updateRequest.StockID}, exception: ${e.message}")
-                        null
-                    }
-
-                    if (updateResponse != null) {
-                        successfullySynced.add(updateRequest)
-                        Log.e("SyncManager", "POST to main database successful with ID: ${updateRequest.StockID}")
-                    } else {
-                        Log.e("SyncManager", "Sync changes failed for plant with ID: ${updateRequest.StockID}")
+                        Log.e("SyncManager", "Sync failed for plant ID: ${updateRequest.StockID}, exception: ${e.message}", e)
                     }
                 }
                 PlantRepository.unsyncedChanges.removeAll(successfullySynced)

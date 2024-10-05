@@ -43,22 +43,25 @@ object PlantUIUpdater {
         binding.plantDescriptionEditText.setText(plant.PlantDescription)
         binding.thaiNameText.text = plant.ThaiName?.let { decodeUnicode(it) }
 
-        // Explicitly set letter and number spinners
-        setSpinnerSelection(binding.letterSpinner, plant.TableName?.substring(0, 1))
-        setSpinnerSelection(binding.numberSpinner, plant.TableName?.substring(1))
+        // Safely handle TableName substrings
+        if (!plant.TableName.isNullOrEmpty()) {
+            if (plant.TableName!!.isNotEmpty()) {
+                setSpinnerSelection(binding.letterSpinner, plant.TableName!!.substring(0, 1))
+            } else {
+                Log.e("PlantUIUpdater", "TableName is too short for letterSpinner.")
+            }
 
-        // ID dropdowns
+            if (plant.TableName!!.length > 1) {
+                setSpinnerSelection(binding.numberSpinner, plant.TableName!!.substring(1))
+            } else {
+                Log.e("PlantUIUpdater", "TableName is too short for numberSpinner.")
+            }
+        } else {
+            Log.e("PlantUIUpdater", "TableName is null or empty.")
+        }
+
+        // Continue with other updates
         setIDDropdowns(binding, plant)
-
-        // TableName and other common fields
-        binding.traySizeEditText.setText(plant.TraySize)
-        binding.gramsEditText.setText(plant.Grams?.toString())
-        binding.usdEditText.text = binding.root.context.getString(R.string.usd_edit_text, plant.USD)
-        binding.eurEditText.text = binding.root.context.getString(R.string.eur_edit_text, plant.EUR)
-        binding.totalValueEditText.text =
-            binding.root.context.getString(R.string.total_value_edit_text, plant.TotalValue)
-
-        // Only update photo views and not the date fields
         updatePhotoViews(binding, plant)
     }
 
@@ -201,13 +204,12 @@ object PlantUIUpdater {
         }
     }
 
-    // Loading photos using Glide
+    // Loading photos using Glide, but only if the photo URL is not null or empty
     private fun loadPhoto(imageView: ImageView, photoUrl: String?) {
-        if (photoUrl.isNullOrEmpty()) {
-            imageView.setImageResource(R.drawable.loading_placeholder)  // Default placeholder image
-        } else {
+        val trimmedPhotoUrl = photoUrl?.trim()
+        if (!trimmedPhotoUrl.isNullOrEmpty() && !trimmedPhotoUrl.equals("null", ignoreCase = true)) {
             // Add a cache-busting query parameter (timestamp) to ensure the latest image is loaded
-            val cacheBustingUrl = "$photoUrl?timestamp=${System.currentTimeMillis()}"
+            val cacheBustingUrl = "$trimmedPhotoUrl?timestamp=${System.currentTimeMillis()}"
 
             Glide.with(imageView.context)
                 .load(cacheBustingUrl)
@@ -218,6 +220,11 @@ object PlantUIUpdater {
                     .error(R.drawable.error_image)
                 )
                 .into(imageView)
+        } else {
+            // Log the invalid URL
+            Log.d("PlantUIUpdater", "Photo URL is null or invalid, setting placeholder.")
+            // Set a default placeholder image if the photo URL is null, empty, or invalid
+            imageView.setImageResource(R.drawable.loading_placeholder)
         }
     }
 }

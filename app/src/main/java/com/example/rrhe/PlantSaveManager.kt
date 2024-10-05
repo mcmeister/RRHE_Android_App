@@ -428,11 +428,15 @@ object PlantSaveManager {
                 // Recalculate values for either new or existing plant
                 if (isEditMode) {
                     binding?.let {
-                        PlantValueCalculator.recalculateValues(it, lifecycleScope, context)
+                        withContext(Dispatchers.Main) {
+                            PlantValueCalculator.recalculateValues(it, lifecycleScope, context)
+                        }
                     }
                 } else {
                     newBinding?.let {
-                        PlantValueCalculator.recalculateValues(it, lifecycleScope, context)
+                        withContext(Dispatchers.Main) {
+                            PlantValueCalculator.recalculateValues(it, lifecycleScope, context)
+                        }
                     }
                 }
 

@@ -17,7 +17,7 @@ interface ApiService {
     suspend fun getRRHEChanges(@Query("last_sync_time") lastSyncTime: String): List<Plant>
 
     @POST("rrhe/update")
-    suspend fun updatePlant(@Body plant: PlantUpdateRequest): ResponseBody
+    suspend fun updatePlant(@Body plant: PlantUpdateRequest): Response<ResponseBody>
 
     @GET("stats")
     suspend fun getStats(): List<Stats>

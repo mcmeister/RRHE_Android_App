@@ -1,5 +1,8 @@
 package com.example.rrhe
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -7,8 +10,10 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,10 +30,6 @@ import com.example.rrhe.databinding.ActivityPlantDetailsBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
-import android.widget.Toast
 
 class PlantDetailsActivity : AppCompatActivity() {
 
@@ -37,11 +38,15 @@ class PlantDetailsActivity : AppCompatActivity() {
     private var isTempID: Boolean = false // Track if this is a temporary ID
     private lateinit var editPlantActivityResultLauncher: ActivityResultLauncher<Intent>
     private var initialPhoto1: String? = null
+    private lateinit var printButton: Button
+    private var currentPlant: Plant? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlantDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        printButton = findViewById(R.id.printButton)
 
         editPlantActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -58,6 +63,7 @@ class PlantDetailsActivity : AppCompatActivity() {
         // Get the stockID from the intent if passed directly from the QR scanner
         stockID = intent.getIntExtra("stockId", 0)
         if (stockID != 0) {
+            Log.d("PlantDetailsActivity", "Loading plant with stockID: $stockID")
             loadPlantByStockID(stockID)
         } else {
             // Fallback to getPlantFromIntent method if no stockID is passed
@@ -68,6 +74,10 @@ class PlantDetailsActivity : AppCompatActivity() {
                 isTempID = intent.getBooleanExtra("isTempID", false)
                 initialPhoto1 = nonNullPlant.Photo1 // Capture the initial Photo1 value
                 updatePlantDetails(nonNullPlant)
+
+                // Assign currentPlant for printing
+                currentPlant = nonNullPlant
+                Log.d("PlantDetailsActivity", "Plant data loaded from intent: $currentPlant")
             } else {
                 Log.e("PlantDetailsActivity", "Plant data is null")
                 finish() // Close the activity if plant data is not available
@@ -77,6 +87,17 @@ class PlantDetailsActivity : AppCompatActivity() {
         binding.backButton.setOnClickListener {
             InactivityDetector(this).reset()
             finish()
+        }
+
+        printButton.setOnClickListener {
+            currentPlant?.let { plant ->
+                Log.d("PlantDetailsActivity", "Printing plant: $plant")
+                // Use PrintManager to show the print dialog
+                PrintManager.showPrintDialog(this, plant)
+            } ?: run {
+                Log.e("PlantDetailsActivity", "Plant data is not available for printing")
+                Toast.makeText(this, "Plant data not available", Toast.LENGTH_SHORT).show()
+            }
         }
 
         binding.editButton.setOnClickListener {
@@ -280,15 +301,24 @@ class PlantDetailsActivity : AppCompatActivity() {
             }
 
             // Load the main plant image with improved error handling and logging
-            loadImageWithRetry(plant.Photo1, plantImage)
+            val trimmedPhoto1 = plant.Photo1?.trim()
+            if (!trimmedPhoto1.isNullOrEmpty() && !trimmedPhoto1.equals("null", ignoreCase = true)) {
+                loadImageWithRetry(trimmedPhoto1, plantImage)
+            } else {
+                Log.d("PlantDetailsActivity", "Main Photo1 URL is null or invalid, setting placeholder.")
+                plantImage.setImageResource(R.drawable.loading_placeholder)
+            }
 
             // Load photo links as image previews
             fun loadPhoto(imageView: ImageView, photo: String?) {
-                if (photo.isNullOrEmpty()) {
-                    imageView.visibility = View.GONE
-                } else {
-                    loadImageWithRetry(photo, imageView)
+                val trimmedPhoto = photo?.trim()
+                if (!trimmedPhoto.isNullOrEmpty() && !trimmedPhoto.equals("null", ignoreCase = true)) {
+                    // Load the photo using Glide only if the URL is valid
+                    loadImageWithRetry(trimmedPhoto, imageView)
                     imageView.visibility = View.VISIBLE
+                } else {
+                    // Hide the ImageView if the photo URL is null, empty, or "null"
+                    imageView.visibility = View.GONE
                 }
             }
 
@@ -315,39 +345,45 @@ class PlantDetailsActivity : AppCompatActivity() {
     private fun loadImageWithRetry(photo: String?, imageView: ImageView) {
         if (isFinishing || isDestroyed) return  // Prevent loading if the activity is finishing or destroyed
 
-        Glide.with(this@PlantDetailsActivity)
-            .load(photo)
-            .apply(RequestOptions()
-                .diskCacheStrategy(DiskCacheStrategy.ALL)  // Cache the image to prevent re-downloading
-                .skipMemoryCache(true)  // Skip memory cache to avoid resource conflicts
-                .placeholder(R.drawable.loading_placeholder)
-                .error(R.drawable.error_image)
-                .timeout(60000)  // Increase timeout to handle large images or slow networks
-            )
-            .listener(object : RequestListener<Drawable> {
-                override fun onLoadFailed(
-                    e: GlideException?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    Log.e("Glide", "Failed to load image: $photo", e)
-                    // Optionally, you can add a manual retry mechanism here
-                    return false  // Let Glide handle the error display using the .error() option
-                }
+        val trimmedPhoto = photo?.trim()
+        if (!trimmedPhoto.isNullOrEmpty() && !trimmedPhoto.equals("null", ignoreCase = true)) {
+            Glide.with(this@PlantDetailsActivity)
+                .load(trimmedPhoto)
+                .apply(RequestOptions()
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)  // Cache the image to prevent re-downloading
+                    .skipMemoryCache(true)  // Skip memory cache to avoid resource conflicts
+                    .placeholder(R.drawable.loading_placeholder)
+                    .error(R.drawable.error_image)
+                    .timeout(60000)  // Increase timeout to handle large images or slow networks
+                )
+                .listener(object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e("Glide", "Failed to load image: $trimmedPhoto", e)
+                        return false  // Let Glide handle the error display using the .error() option
+                    }
 
-                override fun onResourceReady(
-                    resource: Drawable?,
-                    model: Any?,
-                    target: Target<Drawable>?,
-                    dataSource: DataSource?,
-                    isFirstResource: Boolean
-                ): Boolean {
-                    Log.d("Glide", "Image loaded successfully: $photo")
-                    return false  // Allow the image to be set
-                }
-            })
-            .into(imageView)
+                    override fun onResourceReady(
+                        resource: Drawable?,
+                        model: Any?,
+                        target: Target<Drawable>?,
+                        dataSource: DataSource?,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.d("Glide", "Image loaded successfully: $trimmedPhoto")
+                        return false  // Allow the image to be set
+                    }
+                })
+                .into(imageView)
+        } else {
+            Log.d("PlantDetailsActivity", "Photo URL is null or invalid, setting placeholder.")
+            // Set a placeholder image if the photo URL is invalid
+            imageView.setImageResource(R.drawable.loading_placeholder)
+        }
     }
 
     private fun clearGlideCache() {
@@ -411,9 +447,13 @@ class PlantDetailsActivity : AppCompatActivity() {
         lifecycleScope.launch(Dispatchers.IO) {
             val plant = PlantRepository.getPlantByStockID(stockID)
             withContext(Dispatchers.Main) {
-                plant?.let {
-                    updatePlantDetails(it)
-                } ?: run {
+                if (plant != null) {
+                    updatePlantDetails(plant)
+
+                    // Assign currentPlant for printing
+                    currentPlant = plant
+                    Log.d("PlantDetailsActivity", "Plant data loaded from repository: $currentPlant")
+                } else {
                     Log.e("PlantDetailsActivity", "Plant not found for StockID: $stockID")
                     finish() // Close the activity if plant data is not available
                 }

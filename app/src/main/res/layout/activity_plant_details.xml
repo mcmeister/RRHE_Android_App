@@ -269,6 +269,7 @@
         </ScrollView>
 
         <LinearLayout
+            style="?android:attr/buttonBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -286,6 +287,17 @@
                 android:textSize="16sp"
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/button_background" />
+
+            <Button
+                android:id="@+id/printButton"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/print_button"
+                android:textSize="16sp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/button_background"
+                android:layout_gravity="center" />
 
             <Button
                 android:id="@+id/editButton"
