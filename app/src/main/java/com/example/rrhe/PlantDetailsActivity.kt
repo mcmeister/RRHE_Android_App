@@ -38,7 +38,7 @@ class PlantDetailsActivity : AppCompatActivity() {
     private var isTempID: Boolean = false // Track if this is a temporary ID
     private lateinit var editPlantActivityResultLauncher: ActivityResultLauncher<Intent>
     private var initialPhoto1: String? = null
-    private lateinit var printButton: Button
+    private lateinit var fabPrint: com.google.android.material.floatingactionbutton.FloatingActionButton
     private var currentPlant: Plant? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,7 +46,8 @@ class PlantDetailsActivity : AppCompatActivity() {
         binding = ActivityPlantDetailsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        printButton = findViewById(R.id.printButton)
+        // Initialize the FAB instead of the Print Button
+        fabPrint = findViewById(R.id.fab_print)
 
         editPlantActivityResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -85,11 +86,12 @@ class PlantDetailsActivity : AppCompatActivity() {
         }
 
         binding.backButton.setOnClickListener {
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             finish()
         }
 
-        printButton.setOnClickListener {
+        // Set up the FAB's click listener
+        fabPrint.setOnClickListener {
             currentPlant?.let { plant ->
                 Log.d("PlantDetailsActivity", "Printing plant: $plant")
                 // Use PrintManager to show the print dialog
@@ -101,7 +103,7 @@ class PlantDetailsActivity : AppCompatActivity() {
         }
 
         binding.editButton.setOnClickListener {
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             fetchAndEditPlantDetails()
         }
 
@@ -123,7 +125,7 @@ class PlantDetailsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
 
         // If this was a temporary ID, update it to the permanent ID if available
         if (isTempID) {
@@ -142,11 +144,11 @@ class PlantDetailsActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        InactivityDetector(this).stop()
+        // InactivityDetector(this).stop()
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
         return super.onTouchEvent(event)
     }
 
@@ -197,7 +199,8 @@ class PlantDetailsActivity : AppCompatActivity() {
 
     private fun updatePlantDetails(plant: Plant) {
         with(binding) {
-            // Helper function to set text and visibility using resource string with placeholders
+            // Helper functions to set TextViews
+
             fun setTextView(textView: TextView, resId: Int, text: String?) {
                 if (text.isNullOrEmpty()) {
                     textView.visibility = View.GONE
@@ -207,7 +210,6 @@ class PlantDetailsActivity : AppCompatActivity() {
                 }
             }
 
-            // Helper function to set text and visibility using resource string with placeholders for integers
             fun setTextViewInt(textView: TextView, resId: Int, value: Int?) {
                 if (value == null) {
                     textView.visibility = View.GONE
@@ -217,7 +219,6 @@ class PlantDetailsActivity : AppCompatActivity() {
                 }
             }
 
-            // Helper function to set text and visibility using resource string with placeholders for integers, hiding if zero
             fun setTextViewIntZero(textView: TextView, resId: Int, value: Int?) {
                 if (value == null || value == 0) {
                     textView.visibility = View.GONE
@@ -227,7 +228,6 @@ class PlantDetailsActivity : AppCompatActivity() {
                 }
             }
 
-            // Set text without label for plantName and plantThaiName
             fun setTextViewNoLabel(textView: TextView, text: String?) {
                 if (text.isNullOrEmpty()) {
                     textView.visibility = View.GONE
@@ -250,11 +250,12 @@ class PlantDetailsActivity : AppCompatActivity() {
             setTextViewIntZero(totalValue, R.string.total_value_text, plant.TotalValue)
             setTextView(plantMother, R.string.mother_text, if (plant.Mother == 1) "Yes" else "No")
             setTextView(plantWebsite, R.string.website_text, if (plant.Website == 1) "Yes" else "No")
+            setTextView(plantVariegated, R.string.variegated_text, if (plant.Variegated == 1) "Yes" else "No")
             setTextView(tableName, R.string.table_name_text, plant.TableName)
             setTextView(traySize, R.string.tray_size_text, plant.TraySize)
             setTextViewIntZero(grams, R.string.grams_text, plant.Grams)
 
-            // Set the Planted date range (No need to format if already strings)
+            // Set the Planted date range
             plantedTextView.text = getString(
                 R.string.planted_text,
                 plant.PlantedStart ?: "",
@@ -418,7 +419,7 @@ class PlantDetailsActivity : AppCompatActivity() {
                             val intent = Intent(this@PlantDetailsActivity, PlantDetailsActivity::class.java).apply {
                                 putExtra("plant", plant)
                             }
-                            InactivityDetector(this@PlantDetailsActivity).reset()
+                            // InactivityDetector(this@PlantDetailsActivity).reset()
                             startActivity(intent)
                         }
                     }

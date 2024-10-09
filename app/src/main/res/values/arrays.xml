@@ -82,4 +82,8 @@
         <item>2</item>
     </string-array>
 
+    <string-array name="empty_number_array">
+        <item />
+    </string-array>
+
 </resources>

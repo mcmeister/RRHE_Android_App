@@ -122,6 +122,7 @@ object Utils {
         exitProcess(0)
     }
 
+    /*
     class ScreenLockReceiver(private val inactivityDetector: InactivityDetector) : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_SCREEN_OFF) {
@@ -130,4 +131,5 @@ object Utils {
             }
         }
     }
+     */
 }

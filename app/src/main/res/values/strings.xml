@@ -42,6 +42,7 @@
     <string name="status_note_hint">Status Note</string>
     <string name="mother_hint">Mother</string>
     <string name="website_hint">Website</string>
+    <string name="variegated_hint">Variegated</string>
     <string name="table_name_edit_text">Table Name</string>
     <string name="tray_size_hint">Tray Size</string>
     <string name="grams_hint">Grams</string>
@@ -90,6 +91,7 @@
     <string name="stock_id_text">Stock ID:\n%1$d</string>
     <string name="mother_text">Mother:\n%1$s</string>
     <string name="website_text">Website:\n%1$s</string>
+    <string name="variegated_text">Variegated:\n%1$s</string>
     <string name="table_name_text">Table Name:\n%1$s</string>
     <string name="planted_text">Planted:\n%1$s - %2$s</string>
     <string name="pollinate_date_text">Pollinate Date:\n%1$s</string>
@@ -117,7 +119,6 @@
     <string name="grams_text">Grams:\n%1$d</string>
     <string name="tray_size_text">Tray Size:\n%1$s</string>
     <string name="tray_qty_text">Tray Quantity:\n%1$d</string>
-    <string name="variegated_text">Variegated:\n%1$s</string>
     <string name="images">Images:</string>
     <string name="plant_description_text">Plant Description:\n%1$s</string>
     <string name="images_label">Images:</string>
@@ -159,6 +160,7 @@
     <string name="print_button">Print</string>
     <string name="print_template_label">Label Template</string>
     <string name="print_template_sticker">Sticker Template</string>
+    <string name="listing_description">"Listing Description: "</string>
 
     <string-array name="letter_array">
         <item>A</item>

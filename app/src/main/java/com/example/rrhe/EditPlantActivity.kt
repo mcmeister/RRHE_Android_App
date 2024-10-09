@@ -38,6 +38,8 @@ interface PlantBindingActivity {
     val photoEdit3: ImageView
     val photoEdit4: ImageView
     val saveButton: Button
+
+    val traySizeAutoCompleteTextView: AutoCompleteTextView // Added property
 }
 
 class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantBindingActivity {
@@ -79,6 +81,9 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     override val fIdAutoCompleteTextView: AutoCompleteTextView
         get() = binding.fIdAutoCompleteTextView
 
+    override val traySizeAutoCompleteTextView: AutoCompleteTextView // Implemented property
+        get() = binding.traySizeAutoCompleteTextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d("EditPlantActivity", "onCreate called")
         super.onCreate(savedInstanceState)
@@ -98,12 +103,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
         currentPlant?.let {
             // Update the UI based on currentPlant (without re-setting the dropdowns)
-            if (binding.letterSpinner.selectedItem == null || binding.numberSpinner.selectedItem == null) {
-                // Only update spinners once if not set already
-                updateTableNameDropdown(it.TableName ?: "")
-            }
-            // This method handles other UI elements unrelated to spinners
-            PlantUIUpdater.updateUI(binding, it)
+            updateUI(it)
         }
 
         setupListeners()
@@ -165,12 +165,12 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
             updateUI(it)
         }
 
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
     }
 
     override fun onPause() {
         super.onPause()
-        InactivityDetector(this).stop()
+        // InactivityDetector(this).stop()
     }
 
     override fun onDestroy() {
@@ -188,7 +188,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
         return super.onTouchEvent(event)
     }
 
@@ -202,7 +202,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     }
 
     private fun updateParentPlantFieldsVisibility(plantStatus: String) {
-        val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope)
+        val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding)
 
         when (plantStatus) {
             "Propagate" -> {
@@ -252,9 +252,10 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         PlantUIUpdater.updateUI(binding, plant)
         binding.motherSwitch.isChecked = plant.Mother == 1
         binding.websiteSwitch.isChecked = plant.Website == 1
+        binding.variegatedSwitch.isChecked = plant.Variegated == 1
         PlantSaveManager.updateUI(binding, plant)
 
-        // Populate Species, StockID, and StatusNote
+        // Update species, stock ID, and status note
         binding.speciesAutoCompleteTextView.setText(plant.Species ?: "", false)
         binding.stockIdText.text = plant.StockID?.toString() ?: ""
         binding.statusNoteEditText.setText(plant.StatusNote ?: "")
@@ -262,6 +263,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         plant.PlantStatus?.let { updateParentPlantFieldsVisibility(it) }
         plant.PlantStatus?.let { updatePurchasePriceVisibility(it) }
 
+        // Ensure images are loaded only once
         if (!imagesLoaded) {
             loadOrSetPlaceholder(plant.Photo1, binding.photoEdit1)
             loadOrSetPlaceholder(plant.Photo2, binding.photoEdit2)
@@ -290,37 +292,42 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
             binding.stockPriceEditText,
             binding.stockQtyEditText
         ) {
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             recalculateValues()
         }
         PlantListeners.setupDropdownListeners(
             binding.familyAutoCompleteTextView,
             binding.speciesAutoCompleteTextView,
             { family ->
-                InactivityDetector(this).reset()
+                // InactivityDetector(this).reset()
                 updateSpeciesDropdown(family)
             },
             { family, species ->
-                InactivityDetector(this).reset()
+                // InactivityDetector(this).reset()
                 updateSubspeciesDropdown(family, species)
             }
         )
         PlantListeners.setupSaveButtonListener(binding.saveButton, currentPlant, this::savePlantLocallyAndSync)
 
         binding.backButton.setOnClickListener {
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             Log.d("EditPlantActivity", "Back button clicked")
             finish()
         }
 
         binding.motherSwitch.setOnCheckedChangeListener { _, isChecked ->
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             currentPlant?.Mother = if (isChecked) 1 else 0
         }
 
         binding.websiteSwitch.setOnCheckedChangeListener { _, isChecked ->
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             currentPlant?.Website = if (isChecked) 1 else 0
+        }
+
+        binding.variegatedSwitch.setOnCheckedChangeListener { _, isChecked ->
+            // InactivityDetector(this).reset()
+            currentPlant?.Variegated = if (isChecked) 1 else 0
         }
 
         setupDatePickers()
@@ -338,7 +345,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
             val selectedStatus = binding.plantStatusAutoCompleteTextView.text.toString()
             updateParentPlantFieldsVisibility(selectedStatus)
             updatePurchasePriceVisibility(selectedStatus)
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
         }
     }
 
@@ -375,59 +382,39 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
     @SuppressLint("ClickableViewAccessibility")
     private fun setupDropdownAdapters(plant: Plant?) {
-        Log.d("EditPlantActivity", "Setting up dropdown adapters for plant: $plant")
-
         lifecycleScope.launch {
             // Setup the adapters for Family, Status, and Table Name
             PlantDropdownAdapter.setupFamilyAdapter(applicationContext)
             PlantDropdownAdapter.setupStatusAdapter(applicationContext)
             PlantDropdownAdapter.setupTableNameAdapters(applicationContext)
 
-            // Apply the family adapter to the Family dropdown
+            // Apply the family adapter
             PlantDropdownAdapter.applyFamilyAdapterCommon(
-                PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
+                PlantDropdownAdapter.EditPlantBindingWrapper(binding),
                 applicationContext,
                 plant?.Family ?: ""
             )
 
-            // Apply the status adapter to the Status dropdown
+            // Apply the status adapter
             PlantDropdownAdapter.applyStatusAdapter(
-                PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
+                PlantDropdownAdapter.EditPlantBindingWrapper(binding),
                 plant?.PlantStatus ?: ""
             )
 
-            // Ensure we update both letter and number spinners properly
-            plant?.TableName?.let {
-                // Apply adapters first to ensure we can set selections
-                Log.d("setupDropdownAdapters", "Applying TableName adapters for TableName: $it")
-                PlantDropdownAdapter.applyTableNameAdapters(
-                    PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
-                    it
-                )
+            // Apply the TableName adapters
+            PlantDropdownAdapter.applyTableNameAdapters(
+                PlantDropdownAdapter.EditPlantBindingWrapper(binding),
+                plant?.TableName ?: ""
+            )
 
-                // Now update spinners after adapters are applied
-                updateTableNameDropdown(it)
-            }
-
-            // Add OnTouchListener to reset inactivity timer on user interaction
-            binding.letterSpinner.setOnTouchListener { _, _ ->
-                InactivityDetector(this@EditPlantActivity).reset()
-                false
-            }
-
-            binding.numberSpinner.setOnTouchListener { _, _ ->
-                InactivityDetector(this@EditPlantActivity).reset()
-                false
-            }
-
-            // Update species dropdown if Family is set
+            // Set up species and subspecies dropdowns
             plant?.Family?.let { family ->
                 if (family.isNotEmpty()) {
                     updateSpeciesDropdown(family, plant.Species ?: "")
                 }
             }
 
-            // Setup parent plant dropdowns if necessary
+            // Setup parent plant dropdowns
             setupParentPlantDropdowns(plant)
         }
     }
@@ -459,8 +446,10 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
                 binding.numberSpinner.viewTreeObserver.addOnGlobalLayoutListener(
                     object : ViewTreeObserver.OnGlobalLayoutListener {
                         override fun onGlobalLayout() {
-                            Log.d("updateTableNameDropdown", "Setting number spinner to: $number")
-                            binding.numberSpinner.setSelection(number - 1)
+                            val numberPosition = number - 1
+                            if (numberPosition >= 0 && numberPosition < binding.numberSpinner.adapter.count) {
+                                binding.numberSpinner.setSelection(numberPosition)
+                            }
                             binding.numberSpinner.viewTreeObserver.removeOnGlobalLayoutListener(this)
                         }
                     }
@@ -479,22 +468,22 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
                 val motherPlants = PlantDropdownAdapter.setupMotherPlantIdAdapter(
                     applicationContext,
                     family,
-                    PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope)
+                    PlantDropdownAdapter.EditPlantBindingWrapper(binding)
                 )
                 if (motherPlants.isNotEmpty()) {
                     PlantDropdownAdapter.applyMotherPlantAdapter(
-                        PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
+                        PlantDropdownAdapter.EditPlantBindingWrapper(binding),
                         motherPlants
                     )
                 }
 
                 val fatherPlants = PlantDropdownAdapter.setupFatherPlantIdAdapter(
                     applicationContext,
-                    PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope)
+                    PlantDropdownAdapter.EditPlantBindingWrapper(binding)
                 )
                 if (fatherPlants.isNotEmpty()) {
                     PlantDropdownAdapter.applyFatherPlantAdapter(
-                        PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope),
+                        PlantDropdownAdapter.EditPlantBindingWrapper(binding),
                         fatherPlants
                     )
                 }
@@ -504,7 +493,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
     private fun updateSpeciesDropdown(family: String, currentSpecies: String = "") {
         Log.d("EditPlantActivity", "Updating species dropdown for family: $family")
-        val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope)
+        val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding)
 
         lifecycleScope.launch {
             val hasSpecies = PlantDropdownAdapter.updateSpeciesAdapter(applicationContext, family)
@@ -520,7 +509,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
 
     private fun updateSubspeciesDropdown(family: String, species: String, currentSubspecies: String = "") {
         Log.d("EditPlantActivity", "Updating subspecies dropdown for family: $family and species: $species")
-        val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding, lifecycleScope)
+        val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding)
 
         lifecycleScope.launch {
             val hasSubspecies = PlantDropdownAdapter.updateSubspeciesAdapter(applicationContext, family, species)
@@ -537,7 +526,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     }
 
     private fun savePlantLocallyAndSync(plant: Plant) {
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
         if (PlantSaveManager.isPhotoUploading) {
             showToast(this, "Please wait until the photo is uploaded")
             return
@@ -548,6 +537,10 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
         lifecycleScope.launch(job + Dispatchers.IO) {
             try {
                 Log.d("EditPlantActivity", "Saving plant locally and syncing")
+
+                // Update TraySize from the AutoCompleteTextView
+                plant.TraySize = binding.traySizeAutoCompleteTextView.text.toString()
+
                 PlantSaveManager.savePlantLocallyAndSync(
                     context = applicationContext,
                     binding = binding,
@@ -586,7 +579,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     }
 
     private fun handlePhotoChanged(photoPath: String, photoIndex: Int) {
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
         imagesLoaded = false
 
         // Call PhotoManager to handle the photo change and upload
@@ -603,7 +596,7 @@ class EditPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding, PlantB
     }
 
     private fun handlePhotoRemoved(photoIndex: Int) {
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
         PhotoManager.handlePhotoRemoved(photoIndex, currentPlant, binding, this, lifecycleScope) // Pass the correct binding
     }
 

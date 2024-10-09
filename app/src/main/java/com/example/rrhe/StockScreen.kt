@@ -25,35 +25,35 @@ import com.example.rrhe.ui.theme.RRHETheme
 
 class StockScreen : AppCompatActivity() {
 
-    private lateinit var inactivityDetector: InactivityDetector
+    // private lateinit var inactivityDetector: InactivityDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        inactivityDetector = InactivityDetector(this)
+        // inactivityDetector = InactivityDetector(this)
         setContent {
             val viewModel: StockViewModel = viewModel()
-            StockScreenComposable(viewModel, inactivityDetector)
+            StockScreenComposable(viewModel)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        inactivityDetector.reset()
+        // inactivityDetector.reset()
     }
 
     override fun onPause() {
         super.onPause()
-        inactivityDetector.stop()
+        // inactivityDetector.stop()
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        inactivityDetector.reset()
+        // inactivityDetector.reset()
         return super.onTouchEvent(event)
     }
 }
 
 @Composable
-fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDetector: InactivityDetector) {
+fun StockScreenComposable(viewModel: StockViewModel = viewModel()) {
     RRHETheme {
         val plants by viewModel.plants.collectAsState()
         val context = LocalContext.current
@@ -104,7 +104,7 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
                 websiteFilterButton = websiteFilterButton,
                 onSearch = { query, filterMother, filterWebsite ->
                     viewModel.updateSearchQuery(query, filterMother, filterWebsite)
-                    inactivityDetector.reset()
+                    // inactivityDetector.reset()
                 }
             )
 
@@ -113,7 +113,7 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
             searchEditText.setTextColor(textColor)
 
             // Pass the textColor to the PlantAdapter
-            val adapter = PlantAdapter(plants, inactivityDetector, textColor)
+            val adapter = PlantAdapter(plants, textColor)
             plantList.adapter = adapter
 
             plantList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -133,7 +133,7 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
 
             clearSearchButton.setOnClickListener {
                 searchBar?.clearSearch()
-                inactivityDetector.reset()
+                // inactivityDetector.reset()
             }
 
             qrCodeButton.setOnClickListener {
@@ -144,7 +144,7 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
             fabAddNewPlant.setOnClickListener {
                 val intent = Intent(context, NewPlantActivity::class.java)
                 context.startActivity(intent)
-                inactivityDetector.reset()
+                // inactivityDetector.reset()
             }
 
             adapter.setOnItemClickListener { plant ->
@@ -152,7 +152,7 @@ fun StockScreenComposable(viewModel: StockViewModel = viewModel(), inactivityDet
                     putExtra("plant", plant as Parcelable)
                 }
                 plantDetailsLauncher.launch(intent)
-                inactivityDetector.reset()
+                // inactivityDetector.reset()
             }
 
             plantList.layoutManager = LinearLayoutManager(view.context)

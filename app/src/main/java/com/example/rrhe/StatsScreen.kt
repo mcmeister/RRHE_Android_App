@@ -19,35 +19,35 @@ import com.example.rrhe.ui.theme.RRHETheme
 
 class StatsScreen : ComponentActivity() {
 
-    private lateinit var inactivityDetector: InactivityDetector
+    // private lateinit var inactivityDetector: InactivityDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        inactivityDetector = InactivityDetector(this)
+        // inactivityDetector = InactivityDetector(this)
         setContent {
             val viewModel: StatsViewModel = viewModel()
-            StatsScreenComposable(viewModel, inactivityDetector)
+            StatsScreenComposable(viewModel)
         }
     }
 
     override fun onResume() {
         super.onResume()
-        inactivityDetector.reset()
+        // inactivityDetector.reset()
     }
 
     override fun onPause() {
         super.onPause()
-        inactivityDetector.stop()
+        // inactivityDetector.stop()
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        inactivityDetector.reset()
+        // inactivityDetector.reset()
         return super.onTouchEvent(event)
     }
 }
 
 @Composable
-fun StatsScreenComposable(viewModel: StatsViewModel = viewModel(), inactivityDetector: InactivityDetector) {
+fun StatsScreenComposable(viewModel: StatsViewModel = viewModel()) {
     RRHETheme {
         val stats by viewModel.stats.collectAsState()
 
@@ -132,7 +132,7 @@ fun StatsScreenComposable(viewModel: StatsViewModel = viewModel(), inactivityDet
             // Reset inactivity timer when user interacts with the screen
             view.setOnTouchListener { v, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
-                    inactivityDetector.reset()
+                    // inactivityDetector.reset()
                     v.performClick()
                 }
                 false

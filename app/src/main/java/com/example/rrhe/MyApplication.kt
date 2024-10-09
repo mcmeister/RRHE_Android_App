@@ -45,7 +45,7 @@ class MyApplication : Application() {
     private fun initializeWorkManager() {
         val config = Configuration.Builder()
             .setMinimumLoggingLevel(Log.INFO)
-            .setWorkerFactory(InactivityDetector.MyWorkerFactory())
+            // .setWorkerFactory(InactivityDetector.MyWorkerFactory())
             .build()
         WorkManager.initialize(this, config)
     }

@@ -36,8 +36,8 @@ class MainActivity : AppCompatActivity() {
     private val stockViewModel: StockViewModel by viewModels {
         ViewModelFactory(application)
     }
-    private lateinit var inactivityDetector: InactivityDetector
-    private lateinit var screenLockReceiver: Utils.ScreenLockReceiver
+    // private lateinit var inactivityDetector: InactivityDetector
+    // private lateinit var screenLockReceiver: Utils.ScreenLockReceiver
 
     private val requestCodePostNotifications = 1001
 
@@ -45,9 +45,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         // Initialize InactivityDetector
-        inactivityDetector = InactivityDetector(this)
-        screenLockReceiver = Utils.ScreenLockReceiver(inactivityDetector)
-        registerReceiver(screenLockReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+        // inactivityDetector = InactivityDetector(this)
+        // screenLockReceiver = Utils.ScreenLockReceiver(inactivityDetector)
+        // registerReceiver(screenLockReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
 
         setContent {
             RRHETheme {
@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
                         BottomNavigationBar(navController = navController)
                     }
                 ) {
-                    NavGraph(navController = navController, inactivityDetector = inactivityDetector, modifier = Modifier.padding(it))
+                    NavGraph(navController = navController, modifier = Modifier.padding(it))
                 }
             }
         }
@@ -120,22 +120,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        inactivityDetector.reset() // Reset inactivity timer when resuming
+        // inactivityDetector.reset() // Reset inactivity timer when resuming
     }
 
     override fun onPause() {
         super.onPause()
-        inactivityDetector.stop() // Stop inactivity timer when pausing
+        // inactivityDetector.stop() // Stop inactivity timer when pausing
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        inactivityDetector.reset() // Reset inactivity timer on user interaction
+        // inactivityDetector.reset() // Reset inactivity timer on user interaction
         return super.onTouchEvent(event)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(screenLockReceiver)
+        // unregisterReceiver(screenLockReceiver)
     }
 }
 

@@ -1,11 +1,15 @@
+// NewPlantActivity.kt
 package com.example.rrhe
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
@@ -56,7 +60,32 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
         loadOrSetPlaceholder(null, binding.photoEdit4)
 
         setupDropdownAdapters()
+        setupTraySizeDropdown() // Added to set up Tray Size dropdown
         setupListeners()
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupTraySizeDropdown() {
+        val predefinedTraySizes = listOf("Tray 6", "Tray 15", "Tray 24")
+
+        val traySizeAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, predefinedTraySizes)
+        binding.traySizeAutoCompleteTextView.setAdapter(traySizeAdapter)
+
+        // Prevent typing
+        binding.traySizeAutoCompleteTextView.inputType = InputType.TYPE_NULL
+        binding.traySizeAutoCompleteTextView.keyListener = null
+
+        // Show dropdown on click
+        binding.traySizeAutoCompleteTextView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                binding.traySizeAutoCompleteTextView.showDropDown()
+                binding.traySizeAutoCompleteTextView.requestFocus()
+            }
+            false
+        }
+
+        // Optionally, set a default value (e.g., the first item)
+        // binding.traySizeAutoCompleteTextView.setText(predefinedTraySizes[0], false)
     }
 
     @Suppress("SameParameterValue")
@@ -80,7 +109,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
     }
 
     private fun handlePlantSave() {
-        InactivityDetector(this).reset()
+        // InactivityDetector(this).reset()
 
         lifecycleScope.launch {
             PlantSaveManager.savePlantLocallyAndSync(
@@ -105,7 +134,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
             binding.stockPriceEditText,
             binding.stockQtyEditText
         ) {
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             recalculateValues()
         }
 
@@ -114,37 +143,37 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
             binding.familyAutoCompleteTextView,
             binding.speciesAutoCompleteTextView,
             { family ->
-                InactivityDetector(this).reset()
+                // InactivityDetector(this).reset()
                 updateSpeciesDropdown(family)
             },
             { family, species ->
-                InactivityDetector(this).reset()
+                // InactivityDetector(this).reset()
                 updateSubspeciesDropdown(family, species)
             }
         )
 
         // Save button listener
         binding.saveButton.setOnClickListener {
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             handlePlantSave()
         }
 
         // Back button listener
         binding.backButton.setOnClickListener {
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             Log.d("NewPlantActivity", "Back button clicked")
             finish()
         }
 
         // Mother switch listener
         binding.motherSwitch.setOnCheckedChangeListener { _, isChecked ->
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             motherValue = if (isChecked) 1 else 0 // Store the switch value
         }
 
         // Website switch listener
         binding.websiteSwitch.setOnCheckedChangeListener { _, isChecked ->
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
             websiteValue = if (isChecked) 1 else 0 // Store the switch value
         }
 
@@ -197,7 +226,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
             val selectedStatus = binding.plantStatusAutoCompleteTextView.text.toString()
             updateParentPlantFieldsVisibility(selectedStatus)
             updatePurchasePriceVisibility(selectedStatus)
-            InactivityDetector(this).reset()
+            // InactivityDetector(this).reset()
         }
     }
 
@@ -234,19 +263,19 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
 
             // Add OnTouchListener to letterSpinner to reset inactivity detector on touch
             binding.letterSpinner.setOnTouchListener { _, _ ->
-                InactivityDetector(this@NewPlantActivity).reset() // Reset inactivity timer
+                // InactivityDetector(this@NewPlantActivity).reset() // Reset inactivity timer
                 false // Return false to let the spinner handle the touch event as usual
             }
 
             // Add OnTouchListener to numberSpinner to reset inactivity detector on touch
             binding.numberSpinner.setOnTouchListener { _, _ ->
-                InactivityDetector(this@NewPlantActivity).reset() // Reset inactivity timer
+                // InactivityDetector(this@NewPlantActivity).reset() // Reset inactivity timer
                 false // Return false to let the spinner handle the touch event as usual
             }
 
             // Update species and subspecies based on family selection
             binding.familyAutoCompleteTextView.setOnItemClickListener { _, _, _, _ ->
-                InactivityDetector(this@NewPlantActivity).reset() // Reset inactivity timer
+                // InactivityDetector(this@NewPlantActivity).reset() // Reset inactivity timer
                 val family = binding.familyAutoCompleteTextView.text.toString()
                 updateSpeciesDropdown(family)
             }
@@ -266,7 +295,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
                     binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope)
                 )
                 if (motherPlants.isNotEmpty()) {
-                    InactivityDetector(this@NewPlantActivity).reset()
+                    // InactivityDetector(this@NewPlantActivity).reset()
                     PlantDropdownAdapter.applyMotherPlantAdapter(
                         binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope),
                         motherPlants = motherPlants
@@ -278,7 +307,7 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
                     binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope)
                 )
                 if (fatherPlants.isNotEmpty()) {
-                    InactivityDetector(this@NewPlantActivity).reset()
+                    // InactivityDetector(this@NewPlantActivity).reset()
                     PlantDropdownAdapter.applyFatherPlantAdapter(
                         binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope),
                         fatherPlants = fatherPlants
@@ -293,7 +322,8 @@ class NewPlantActivity : AppCompatActivity(), PhotoManager.PlantBinding {
             val hasSpecies = PlantDropdownAdapter.updateSpeciesAdapter(applicationContext, family)
             PlantDropdownAdapter.applySpeciesAdapter(
                 binding = PlantDropdownAdapter.NewPlantBindingWrapper(binding, lifecycleScope),
-                hasSpecies = hasSpecies
+                hasSpecies = hasSpecies,
+                currentSpecies = binding.speciesAutoCompleteTextView.text.toString()
             )
 
             if (hasSpecies) {

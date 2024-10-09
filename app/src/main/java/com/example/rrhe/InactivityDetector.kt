@@ -8,7 +8,7 @@ import android.widget.Toast
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
 import androidx.work.WorkerParameters
-
+/*
 class InactivityDetector(private val context: Context, private val inactivityTimeout: Long = 120000, private val terminationTimeout: Long = 480000) {
 
     private val handler: Handler = Handler(Looper.getMainLooper())
@@ -81,3 +81,4 @@ class InactivityDetector(private val context: Context, private val inactivityTim
         }
     }
 }
+*/

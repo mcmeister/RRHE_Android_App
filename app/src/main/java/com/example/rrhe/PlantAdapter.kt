@@ -12,7 +12,7 @@ import com.example.rrhe.databinding.ItemPlantBinding
 
 class PlantAdapter(
     private var plants: List<Plant>,
-    private val inactivityDetector: InactivityDetector,
+    // private val inactivityDetector: InactivityDetector,
     private val textColor: Int // Pass the text color as a parameter
 ) : RecyclerView.Adapter<PlantAdapter.PlantViewHolder>() {
 
@@ -55,7 +55,7 @@ class PlantAdapter(
 
             // Click listener for the root view to navigate to plant details
             binding.root.setOnClickListener {
-                inactivityDetector.reset()  // Reset inactivity timer on plant item click
+                // inactivityDetector.reset()  // Reset inactivity timer on plant item click
                 val ctx = it.context
                 val intent = Intent(ctx, PlantDetailsActivity::class.java).apply {
                     putExtra("plant", plant)
@@ -65,7 +65,7 @@ class PlantAdapter(
 
             // Click listener for the plant image to open in fullscreen
             binding.plantImage.setOnClickListener {
-                inactivityDetector.reset()  // Reset inactivity timer on image click
+                // inactivityDetector.reset()  // Reset inactivity timer on image click
                 val fragment = ImageDialogFragment.newInstance(photoUrl)
                 (context as AppCompatActivity).supportFragmentManager
                     .beginTransaction()

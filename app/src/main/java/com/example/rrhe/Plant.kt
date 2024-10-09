@@ -84,8 +84,7 @@ data class Plant(
             USD = this.USD ?: 0,
             EUR = this.EUR ?: 0,
             Grams = this.Grams ?: 0,
-            TrayQty = this.TrayQty ?: 0,
-            Variegated = this.Variegated ?: 0  // Change this to default to 0
+            TrayQty = this.TrayQty ?: 0
         )
     }
 }

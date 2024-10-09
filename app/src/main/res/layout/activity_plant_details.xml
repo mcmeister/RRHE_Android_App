@@ -129,6 +129,13 @@
                     android:layout_marginTop="8dp"/>
 
                 <TextView
+                    android:id="@+id/plantVariegated"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="18sp"
+                    android:layout_marginTop="8dp"/>
+
+                <TextView
                     android:id="@+id/traySize"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -270,6 +277,7 @@
 
         <LinearLayout
             style="?android:attr/buttonBarStyle"
+            android:id="@+id/buttonBlock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -289,17 +297,6 @@
                 android:background="@drawable/button_background" />
 
             <Button
-                android:id="@+id/printButton"
-                style="?android:attr/buttonBarButtonStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/print_button"
-                android:textSize="16sp"
-                android:layout_marginEnd="16dp"
-                android:background="@drawable/button_background"
-                android:layout_gravity="center" />
-
-            <Button
                 android:id="@+id/editButton"
                 style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="wrap_content"
@@ -309,5 +306,17 @@
                 android:background="@drawable/button_background" />
         </LinearLayout>
     </FrameLayout>
+
+    <!-- New Floating Action Button for Print -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_print"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchor="@id/buttonBlock"
+        app:layout_anchorGravity="top|end"
+        android:layout_marginEnd="30dp"
+        android:translationY="-30dp"
+        android:src="@drawable/ic_print"
+        android:contentDescription="@string/print_button"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

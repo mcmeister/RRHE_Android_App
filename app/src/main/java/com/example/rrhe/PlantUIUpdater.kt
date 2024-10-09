@@ -1,6 +1,9 @@
 package com.example.rrhe
 
+import android.annotation.SuppressLint
+import android.text.InputType
 import android.util.Log
+import android.view.MotionEvent
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.Spinner
@@ -33,6 +36,7 @@ object PlantUIUpdater {
     }
 
     // Update UI elements specifically for EditPlantActivity
+    @SuppressLint("ClickableViewAccessibility")
     private fun updateUIElementsForEdit(binding: ActivityEditPlantBinding, plant: Plant) {
         binding.familyAutoCompleteTextView.setText(plant.Family)
         binding.speciesAutoCompleteTextView.setText(plant.Species)
@@ -43,21 +47,42 @@ object PlantUIUpdater {
         binding.plantDescriptionEditText.setText(plant.PlantDescription)
         binding.thaiNameText.text = plant.ThaiName?.let { decodeUnicode(it) }
 
-        // Safely handle TableName substrings
-        if (!plant.TableName.isNullOrEmpty()) {
-            if (plant.TableName!!.isNotEmpty()) {
-                setSpinnerSelection(binding.letterSpinner, plant.TableName!!.substring(0, 1))
-            } else {
-                Log.e("PlantUIUpdater", "TableName is too short for letterSpinner.")
-            }
+        // Setup Tray Size dropdown
+        val predefinedTraySizes = mutableListOf("Tray 6", "Tray 15", "Tray 24")
 
-            if (plant.TableName!!.length > 1) {
-                setSpinnerSelection(binding.numberSpinner, plant.TableName!!.substring(1))
-            } else {
-                Log.e("PlantUIUpdater", "TableName is too short for numberSpinner.")
+        // Add existing Tray Size if not in predefined list
+        plant.TraySize?.let { traySize ->
+            if (!predefinedTraySizes.contains(traySize)) {
+                predefinedTraySizes.add(traySize)
             }
+        }
+
+        val traySizeAdapter = ArrayAdapter(binding.root.context, android.R.layout.simple_dropdown_item_1line, predefinedTraySizes)
+        binding.traySizeAutoCompleteTextView.setAdapter(traySizeAdapter)
+
+        // Prevent typing
+        binding.traySizeAutoCompleteTextView.inputType = InputType.TYPE_NULL
+        binding.traySizeAutoCompleteTextView.keyListener = null
+
+        // Show dropdown on click
+        binding.traySizeAutoCompleteTextView.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                binding.traySizeAutoCompleteTextView.showDropDown()
+                binding.traySizeAutoCompleteTextView.requestFocus()
+            }
+            false
+        }
+
+        // Set the existing value
+        binding.traySizeAutoCompleteTextView.setText(plant.TraySize ?: "", false)
+
+        // Handle TableName substrings
+        if (!plant.TableName.isNullOrEmpty()) {
+            updateTableNameSpinners(binding, plant.TableName!!)
         } else {
-            Log.e("PlantUIUpdater", "TableName is null or empty.")
+            // If TableName is null or empty, clear the spinners
+            binding.letterSpinner.setSelection(0)
+            binding.numberSpinner.setSelection(0)
         }
 
         // Continue with other updates
@@ -65,26 +90,37 @@ object PlantUIUpdater {
         updatePhotoViews(binding, plant)
     }
 
-    private fun setSpinnerSelection(spinner: Spinner, value: String?) {
-        if (value != null) {
-            val adapter = spinner.adapter
+    private fun updateTableNameSpinners(binding: ActivityEditPlantBinding, tableName: String) {
+        if (tableName.length >= 2) {
+            val letter = tableName.substring(0, 1)
+            val numberString = tableName.substring(1)
+            val number = numberString.toIntOrNull()
 
-            // Safely check if the adapter is an instance of ArrayAdapter<*>
-            if (adapter is ArrayAdapter<*>) {
-                @Suppress("UNCHECKED_CAST")
-                val stringAdapter = adapter as ArrayAdapter<String>
-                val position = stringAdapter.getPosition(value)
-                if (position >= 0) {
-                    Log.d("setSpinnerSelection", "Setting spinner selection to position: $position for value: $value")
-                    spinner.setSelection(position)
-                } else {
-                    Log.e("setSpinnerSelection", "Value '$value' not found in spinner adapter.")
-                }
+            if (number != null) {
+                // Set the letter spinner
+                val letterPosition = PlantDropdownAdapter.letterAdapter?.getPosition(letter) ?: 0
+                binding.letterSpinner.setSelection(letterPosition)
+
+                // Create a PlantBindingWrapper
+                val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding)
+
+                // Update the number spinner based on the letter and desired number
+                PlantDropdownAdapter.updateNumberSpinner(bindingWrapper, letter, number)
+
+                // Removed the redundant post block
             } else {
-                Log.e("setSpinnerSelection", "Spinner adapter is not an instance of ArrayAdapter<String>.")
+                Log.e("PlantUIUpdater", "Invalid number in TableName: $tableName")
+                // Optionally, reset spinners to default selections
+                binding.letterSpinner.setSelection(0)
+                val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding)
+                PlantDropdownAdapter.updateNumberSpinner(bindingWrapper, "", null)
             }
         } else {
-            Log.e("setSpinnerSelection", "Value is null, cannot set spinner selection.")
+            Log.e("PlantUIUpdater", "Invalid TableName format: $tableName")
+            // Optionally, reset spinners to default selections
+            binding.letterSpinner.setSelection(0)
+            val bindingWrapper = PlantDropdownAdapter.EditPlantBindingWrapper(binding)
+            PlantDropdownAdapter.updateNumberSpinner(bindingWrapper, "", null)
         }
     }
 
@@ -103,7 +139,7 @@ object PlantUIUpdater {
         setIDDropdowns(binding, plant)
 
         // TableName and other common fields
-        binding.traySizeEditText.setText(plant.TraySize)
+        binding.traySizeAutoCompleteTextView.setText(plant.TraySize)
         binding.gramsEditText.setText(plant.Grams?.toString())
         binding.usdEditText.text = binding.root.context.getString(R.string.usd_edit_text, plant.USD)
         binding.eurEditText.text = binding.root.context.getString(R.string.eur_edit_text, plant.EUR)
@@ -216,15 +252,16 @@ object PlantUIUpdater {
                 .apply(RequestOptions()
                     .diskCacheStrategy(DiskCacheStrategy.NONE) // Disable Glide's disk caching
                     .skipMemoryCache(true) // Skip memory caching
-                    .placeholder(R.drawable.loading_placeholder)
-                    .error(R.drawable.error_image)
+                    .placeholder(R.drawable.loading_placeholder) // Show loading placeholder while image loads
+                    .error(R.drawable.error_image) // Show error image if loading fails
                 )
                 .into(imageView)
         } else {
             // Log the invalid URL
-            Log.d("PlantUIUpdater", "Photo URL is null or invalid, setting placeholder.")
-            // Set a default placeholder image if the photo URL is null, empty, or invalid
-            imageView.setImageResource(R.drawable.loading_placeholder)
+            Log.d("PlantUIUpdater", "Photo URL is null or invalid, setting plus icon as placeholder.")
+            // Set the plus icon if the photo URL is null, empty, or invalid
+            imageView.setImageResource(R.drawable.ic_add)
+            imageView.scaleType = ImageView.ScaleType.CENTER_INSIDE
         }
     }
 }

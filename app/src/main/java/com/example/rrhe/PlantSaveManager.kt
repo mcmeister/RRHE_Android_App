@@ -198,11 +198,14 @@ object PlantSaveManager {
             tempStockID ?: throw IllegalStateException("Temp StockID is not available for new plant")
         }
 
-        // Fetch calculated values from PlantBindingWrapper
-        val totalValue = plantBindingWrapper.getStockPrice().toIntOrNull()!! * plantBindingWrapper.getStockQty().toIntOrNull()!!
+        val stockPrice = plantBindingWrapper.getStockPrice().toIntOrNull() ?: 0
+        val stockQty = plantBindingWrapper.getStockQty().toIntOrNull() ?: 0
 
-        val usdValue = plantBindingWrapper.getUSD().toIntOrNull()
-        val eurValue = plantBindingWrapper.getEUR().toIntOrNull()
+        // Fetch calculated values from PlantBindingWrapper
+        val totalValue = stockPrice * stockQty
+
+        val usdValue = plantBindingWrapper.getUSD().toIntOrNull() ?: 0
+        val eurValue = plantBindingWrapper.getEUR().toIntOrNull() ?: 0
 
         Log.d("PlantSaveManager", "Calculated values before saving: totalValue=$totalValue, usdValue=$usdValue, eurValue=$eurValue")
         Log.d("PlantSaveManager", "USD fetched from binding before saving: $usdValue")
@@ -263,27 +266,39 @@ object PlantSaveManager {
 
         // Process the values with potential NULL conversion for the main database
         val plant = if (isEditMode && currentPlant != null) {
+
+            // Get the selected letter and number from the spinners
+            val selectedLetter = binding?.letterSpinner?.selectedItem?.toString() ?: ""
+            val selectedNumber = binding?.numberSpinner?.selectedItem?.toString() ?: ""
+            val tableName = if (selectedLetter.isNotEmpty() && selectedNumber.isNotEmpty()) {
+                "$selectedLetter$selectedNumber"
+            } else {
+                null
+            }
+
             currentPlant.copy(
                 Family = convertEmptyToNull(binding?.familyAutoCompleteTextView?.text.toString()),
                 Species = convertEmptyToNull(binding?.speciesAutoCompleteTextView?.text.toString()),
                 Subspecies = convertEmptyToNull(binding?.subspeciesAutoCompleteTextView?.text.toString()),
                 M_ID = motherPlantStockID ?: currentPlant.M_ID,
                 F_ID = fatherPlantStockID ?: currentPlant.F_ID,
-                StockQty = binding?.stockQtyEditText?.text.toString().toIntOrNull()!!,
-                StockPrice = binding?.stockPriceEditText?.text.toString().toIntOrNull(),
+                TableName = convertEmptyToNull(tableName),
+                StockQty = stockQty,
+                StockPrice = stockPrice,
                 TotalValue = totalValue,
                 USD = binding?.usdEditText?.text.toString().toIntOrNull() ?: currentPlant.USD,
                 EUR = binding?.eurEditText?.text.toString().toIntOrNull() ?: currentPlant.EUR,
-                PurchasePrice = binding?.purchasePriceEditText?.text.toString().toIntOrNull(),
+                PurchasePrice = binding?.purchasePriceEditText?.text.toString().toIntOrNull() ?: 0,
                 PlantDescription = convertEmptyToNull(binding?.plantDescriptionEditText?.text.toString()),
                 ThaiName = convertEmptyToNull(binding?.thaiNameText?.text.toString()),
                 NameConcat = convertEmptyToNull(binding?.nameConcatText?.text.toString()) ?: currentPlant.NameConcat,
-                TraySize = convertEmptyToNull(binding?.traySizeEditText?.text.toString()),
-                Grams = binding?.gramsEditText?.text.toString().toIntOrNull(),
+                TraySize = convertEmptyToNull(binding?.traySizeAutoCompleteTextView?.text.toString()),
+                Grams = binding?.gramsEditText?.text.toString().toIntOrNull() ?: 0,
                 PlantStatus = convertEmptyToNull(binding?.plantStatusAutoCompleteTextView?.text.toString()),
                 StatusNote = convertEmptyToNull(binding?.statusNoteEditText?.text.toString()),
                 Mother = if (binding?.motherSwitch?.isChecked == true) 1 else currentPlant.Mother ?: 0,
                 Website = if (binding?.websiteSwitch?.isChecked == true) 1 else currentPlant.Website ?: 0,
+                Variegated = if (binding?.variegatedSwitch?.isChecked == true) 1 else currentPlant.Variegated ?: 0,
                 Photo1 = convertEmptyToNull((photo1Path ?: currentPlant.Photo1).toString()),
                 Photo2 = convertEmptyToNull((photo2Path ?: currentPlant.Photo2).toString()),
                 Photo3 = convertEmptyToNull((photo3Path ?: currentPlant.Photo3).toString()),
@@ -292,6 +307,16 @@ object PlantSaveManager {
                 Stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
             ).ensureNonNullValues()
         } else {
+
+            // Construct TableName from the spinners
+            val selectedLetter = newBinding?.letterSpinner?.selectedItem?.toString() ?: ""
+            val selectedNumber = newBinding?.numberSpinner?.selectedItem?.toString() ?: ""
+            val tableName = if (selectedLetter.isNotEmpty() && selectedNumber.isNotEmpty()) {
+                "$selectedLetter$selectedNumber"
+            } else {
+                null
+            }
+
             Plant(
                 StockID = stockID,
                 Family = convertEmptyToNull(newBinding?.familyAutoCompleteTextView?.text.toString()),
@@ -299,22 +324,23 @@ object PlantSaveManager {
                 Subspecies = convertEmptyToNull(newBinding?.subspeciesAutoCompleteTextView?.text.toString()),
                 M_ID = motherPlantStockID,
                 F_ID = fatherPlantStockID,
-                StockQty = newBinding?.stockQtyEditText?.text.toString().toIntOrNull()!!,
-                StockPrice = newBinding?.stockPriceEditText?.text.toString().toIntOrNull(),
+                StockQty = stockQty,
+                StockPrice = stockPrice,
                 TotalValue = totalValue,
                 USD = usdValue,
                 EUR = eurValue,
-                PurchasePrice = newBinding?.purchasePriceEditText?.text.toString().toIntOrNull(),
+                PurchasePrice = newBinding?.purchasePriceEditText?.text.toString().toIntOrNull() ?: 0,
                 PlantDescription = convertEmptyToNull(newBinding?.plantDescriptionEditText?.text.toString()),
                 NameConcat = convertEmptyToNull(newBinding?.nameConcatText?.text.toString()),
                 ThaiName = convertEmptyToNull(newBinding?.thaiNameText?.text.toString()),
-                TableName = convertEmptyToNull("${newBinding?.letterSpinner?.selectedItem}${newBinding?.numberSpinner?.selectedItem}"),
-                TraySize = convertEmptyToNull(newBinding?.traySizeEditText?.text.toString()),
-                Grams = newBinding?.gramsEditText?.text.toString().toIntOrNull(),
+                TableName = convertEmptyToNull(tableName),
+                TraySize = convertEmptyToNull(newBinding?.traySizeAutoCompleteTextView?.text.toString()),
+                Grams = newBinding?.gramsEditText?.text.toString().toIntOrNull() ?: 0,
                 PlantStatus = convertEmptyToNull(newBinding?.plantStatusAutoCompleteTextView?.text.toString()),
                 StatusNote = convertEmptyToNull(newBinding?.statusNoteEditText?.text.toString()),
                 Mother = if (newBinding?.motherSwitch?.isChecked == true) 1 else 0,
                 Website = if (newBinding?.websiteSwitch?.isChecked == true) 1 else 0,
+                Variegated = if (newBinding?.variegatedSwitch?.isChecked == true) 1 else 0,
                 Photo1 = convertEmptyToNull(photo1Path.toString()),
                 Photo2 = convertEmptyToNull(photo2Path.toString()),
                 Photo3 = convertEmptyToNull(photo3Path.toString()),
@@ -327,7 +353,6 @@ object PlantSaveManager {
                 SeedsPlanted = newBinding?.seedsPlantedTextView?.text?.toString().takeIf { !it.isNullOrBlank() },
                 SeedsHarvest = newBinding?.seedsHarvestTextView?.text?.toString().takeIf { !it.isNullOrBlank() },
                 Weight = null,
-                Variegated = null,
                 PhotoLink1 = null,
                 PhotoLink2 = null,
                 PhotoLink3 = null,

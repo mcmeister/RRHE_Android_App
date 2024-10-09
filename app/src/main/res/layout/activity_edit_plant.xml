@@ -110,15 +110,13 @@
                     android:layout_height="wrap_content"
                     android:labelFor="@id/letterSpinner"
                     android:text="@string/table_name_hint"
-                    android:layout_marginTop="8dp"
-                    android:visibility="gone"/>
+                    android:layout_marginTop="8dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="8dp"
-                    android:visibility="gone">
+                    android:layout_marginTop="8dp">
 
                     <Spinner
                         android:id="@+id/letterSpinner"
@@ -249,6 +247,19 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:text="@string/variegated_hint" />
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/variegatedSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:text="@string/plant_description_hint" />
 
                 <EditText
@@ -263,17 +274,19 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:labelFor="@id/traySizeEditText"
+                    android:labelFor="@id/traySizeAutoCompleteTextView"
                     android:text="@string/tray_size_hint" />
 
-                <EditText
-                    android:id="@+id/traySizeEditText"
+                <AutoCompleteTextView
+                    android:id="@+id/traySizeAutoCompleteTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:importantForAutofill="no"
-                    android:inputType="text"
+                    android:inputType="none"
                     android:maxWidth="488dp"
                     android:minHeight="48dp"
+                    android:focusable="true"
+                    android:clickable="true"
                     tools:ignore="TextFields" />
 
                 <TextView

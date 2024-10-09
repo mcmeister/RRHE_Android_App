@@ -14,7 +14,7 @@ import androidx.navigation.compose.composable
 fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    inactivityDetector: InactivityDetector
+    // inactivityDetector: InactivityDetector
 ) {
     // Get Application from LocalContext
     val application = LocalContext.current.applicationContext as Application
@@ -29,22 +29,22 @@ fun NavGraph(
         // Define StockScreen Composable route
         composable(Screen.StockScreen.route) {
             val stockViewModel: StockViewModel = viewModel(factory = mainViewModelFactory)
-            StockScreenComposable(stockViewModel, inactivityDetector)
-            inactivityDetector.reset()
+            StockScreenComposable(stockViewModel)
+            // inactivityDetector.reset()
         }
 
         // Define StatsScreen Composable route
         composable(Screen.StatsScreen.route) {
             val statsViewModel: StatsViewModel = viewModel(factory = mainViewModelFactory)
-            StatsScreenComposable(statsViewModel, inactivityDetector)
-            inactivityDetector.reset()
+            StatsScreenComposable(statsViewModel)
+            // inactivityDetector.reset()
         }
 
         // Define WebsiteScreen Composable route
         composable(Screen.WebsiteScreen.route) { // Add WebsiteScreen to the NavGraph
             val websiteViewModel: WebsiteViewModel = viewModel(factory = mainViewModelFactory)
-            WebsiteScreenComposable(websiteViewModel, inactivityDetector)
-            inactivityDetector.reset()
+            WebsiteScreenComposable(websiteViewModel)
+            // inactivityDetector.reset()
         }
     }
 }

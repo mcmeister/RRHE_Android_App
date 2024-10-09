@@ -7,7 +7,9 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Spinner
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.lifecycleScope
 import com.example.rrhe.databinding.ActivityEditPlantBinding
 import com.example.rrhe.databinding.ActivityNewPlantBinding
 import kotlinx.coroutines.Dispatchers
@@ -49,18 +51,23 @@ object PlantDropdownAdapter {
     }
 
     fun setupTableNameAdapters(context: Context) {
-        Log.d("PlantDropdownAdapter", "Setting up Table Name dropdowns")
+        val letters = context.resources.getStringArray(R.array.letter_array).toMutableList()
+        letters.add(0, "") // Add empty option at the beginning
 
         letterAdapter = ArrayAdapter(
             context,
             android.R.layout.simple_dropdown_item_1line,
-            context.resources.getStringArray(R.array.letter_array)
+            letters
         )
+
+        // Similar adjustment for numberAdapter
+        val numbers = context.resources.getStringArray(R.array.number_array).toMutableList()
+        numbers.add(0, "") // Add empty option at the beginning
 
         numberAdapter = ArrayAdapter(
             context,
             android.R.layout.simple_dropdown_item_1line,
-            context.resources.getStringArray(R.array.number_array)
+            numbers
         )
     }
 
@@ -105,14 +112,33 @@ object PlantDropdownAdapter {
 
     fun applyTableNameAdapters(binding: PlantBindingWrapper, currentTableName: String) {
         binding.runOnUiThread {
+            Log.d("PlantDropdownAdapter", "Applying TableName: '$currentTableName'")
+
             // Apply the letter dropdown
             binding.letterSpinner.adapter = letterAdapter
 
             // Listener for letter spinner to update the number spinner
             binding.letterSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
+                override fun onItemSelected(
+                    parent: AdapterView<*>,
+                    view: View?,
+                    position: Int,
+                    id: Long
+                ) {
                     val selectedLetter = parent.getItemAtPosition(position) as String
-                    updateNumberSpinner(binding, selectedLetter)
+                    Log.d("PlantDropdownAdapter", "Letter spinner selected: '$selectedLetter' at position: $position")
+
+                    // Only apply this logic if currentTableName is not empty (for Edit Plant)
+                    val desiredNumber = if (currentTableName.isNotEmpty() && currentTableName.length >= 2 && currentTableName.startsWith(selectedLetter)) {
+                        currentTableName.substring(1).toIntOrNull()
+                    } else {
+                        null
+                    }
+
+                    Log.d("PlantDropdownAdapter", "Desired number for selected letter '$selectedLetter': $desiredNumber")
+
+                    // Update the number spinner with the selected letter and desired number
+                    updateNumberSpinner(binding, selectedLetter, desiredNumber)
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>) {
@@ -120,68 +146,85 @@ object PlantDropdownAdapter {
                 }
             }
 
-            // Apply the number dropdown based on the current table name
-            if (currentTableName.length > 1) {
-                val letter = currentTableName.substring(0, 1) // Extract letter
-                val number = currentTableName.substring(1).toIntOrNull() // Extract number
+            // Apply TableName parsing only if it's not empty (to avoid affecting Edit Plant)
+            if (currentTableName.isNotEmpty() && currentTableName.length >= 2) {
+                val letter = currentTableName.substring(0, 1)
+                val numberString = currentTableName.substring(1)
+                val number = numberString.toIntOrNull()
+
+                Log.d("PlantDropdownAdapter", "Parsed TableName: Letter = '$letter', Number = $number")
 
                 if (number != null) {
-                    Log.d("PlantDropdownAdapter", "TableName parsed: Letter = $letter, Number = $number")
-                    binding.letterSpinner.setSelection(letterAdapter?.getPosition(letter) ?: 0)
-                    updateNumberSpinner(binding, letter)
-
-                    // Log the contents of the number adapter
-                    Log.d("PlantDropdownAdapter", "Number spinner array: " +
-                            (0 until (binding.numberSpinner.adapter?.count ?: 0)).joinToString { index ->
-                                binding.numberSpinner.adapter.getItem(index).toString()
-                            }
-                    )
-
-                    // Set the number spinner selection to the extracted number
-                    binding.numberSpinner.post {
-                        Log.d("PlantDropdownAdapter", "Setting number spinner selection to: $number")
-                        binding.numberSpinner.setSelection(number - 1) // Zero-based index
-                    }
+                    // Set the letter spinner to the parsed letter
+                    val letterPosition = letterAdapter?.getPosition(letter) ?: 0
+                    binding.letterSpinner.setSelection(letterPosition)
                 } else {
-                    Log.w("PlantDropdownAdapter", "Invalid number extracted from TableName: $currentTableName")
+                    Log.e("PlantDropdownAdapter", "Invalid number extracted from TableName: '$numberString'")
+                    resetSpinners(binding)
                 }
-            } else {
-                // Handle default case when no valid TableName is present
-                binding.letterSpinner.setSelection(0)
-                updateNumberSpinner(binding, "A")
-                binding.numberSpinner.setSelection(0)
+            } else if (currentTableName.isEmpty()) {
+                Log.e("PlantDropdownAdapter", "Empty TableName, resetting spinners.")
+                resetSpinners(binding)
             }
         }
     }
 
-    private fun updateNumberSpinner(binding: PlantBindingWrapper, selectedLetter: String) {
+    private fun resetSpinners(binding: PlantBindingWrapper) {
+        // Reset spinners to default (empty) if TableName is invalid or empty
+        binding.letterSpinner.setSelection(0)
+        updateNumberSpinner(binding, "", null)
+        binding.numberSpinner.setSelection(0)
+    }
+
+    fun updateNumberSpinner(binding: PlantBindingWrapper, selectedLetter: String, desiredNumber: Int?) {
         val numberArrayResId = when (selectedLetter) {
             "A", "B", "C", "E" -> R.array.number_array_1_to_6
             "D", "G" -> R.array.number_array_1_to_16
             "F" -> R.array.number_array_1_to_24
             "H" -> R.array.number_array_1_to_19
             "I" -> R.array.number_array_1_to_2
-            else -> R.array.number_array // Default fallback, should not happen with defined letters
+            "" -> R.array.empty_number_array // Ensure this array exists with an empty string
+            else -> R.array.number_array // Default fallback
         }
 
-        Log.d("PlantDropdownAdapter", "Updating number spinner for letter $selectedLetter with array $numberArrayResId")
+        // Retrieve the number array and add an empty first item
+        val numbers = binding.letterSpinner.context.resources.getStringArray(numberArrayResId).toMutableList()
+        numbers.add(0, "") // Add empty option at the beginning
 
-        // Create the new number adapter with the correct array
-        numberAdapter = ArrayAdapter(
+        // Create the new number adapter with the updated list
+        val numberAdapter = ArrayAdapter(
             binding.letterSpinner.context,
             android.R.layout.simple_dropdown_item_1line,
-            binding.letterSpinner.context.resources.getStringArray(numberArrayResId)
+            numbers
         )
 
         // Set the adapter for the number spinner
         binding.numberSpinner.adapter = numberAdapter
 
-        // Ensure the adapter has been properly applied before setting selection
+        // Logging to verify the adapter setup
+        Log.d("PlantDropdownAdapter", "Number spinner adapter set with items: $numbers")
+
+        // Now, set the selection
         binding.numberSpinner.post {
-            if (binding.numberSpinner.adapter != null && binding.numberSpinner.adapter.count > 0) {
-                Log.d("PlantDropdownAdapter", "Number spinner adapter is set with ${binding.numberSpinner.adapter.count} items")
+            if (desiredNumber != null) {
+                val numberPosition = desiredNumber // Because position 0 is empty, position 1 is "1", etc.
+
+                if (numberPosition in 1 until binding.numberSpinner.adapter.count) {
+                    binding.numberSpinner.setSelection(numberPosition)
+
+                    // Logging the selection
+                    Log.d(
+                        "PlantDropdownAdapter",
+                        "Setting number spinner to position: $numberPosition with value: ${binding.numberSpinner.getItemAtPosition(numberPosition)}"
+                    )
+                } else {
+                    Log.e("PlantDropdownAdapter", "Number position out of bounds: $numberPosition")
+                    binding.numberSpinner.setSelection(0) // Default to empty if out of bounds
+                }
             } else {
-                Log.e("PlantDropdownAdapter", "Number spinner adapter is not properly set or is empty")
+                // Optionally set to empty
+                binding.numberSpinner.setSelection(0)
+                Log.d("PlantDropdownAdapter", "Desired number is null, setting number spinner to empty.")
             }
         }
     }
@@ -421,8 +464,7 @@ object PlantDropdownAdapter {
 
     // Wrapper for EditPlantBinding
     class EditPlantBindingWrapper(
-        private val binding: ActivityEditPlantBinding,
-        override val lifecycleScope: LifecycleCoroutineScope
+        private val binding: ActivityEditPlantBinding
     ) : PlantBindingWrapper {
         override val familyAutoCompleteTextView get() = binding.familyAutoCompleteTextView
         override val speciesAutoCompleteTextView get() = binding.speciesAutoCompleteTextView
@@ -432,6 +474,11 @@ object PlantDropdownAdapter {
         override val plantStatusAutoCompleteTextView get() = binding.plantStatusAutoCompleteTextView
         override val letterSpinner get() = binding.letterSpinner
         override val numberSpinner get() = binding.numberSpinner
+
+        override val lifecycleScope: LifecycleCoroutineScope
+            get() = (binding.root.context as? AppCompatActivity)?.lifecycleScope
+                ?: throw IllegalStateException("Unable to get lifecycleScope")
+
         override fun runOnUiThread(action: () -> Unit) {
             (binding.root.context as? android.app.Activity)?.runOnUiThread(action)
         }
